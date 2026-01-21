@@ -1,0 +1,106 @@
+.form-step {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+// 共用表單樣式
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    label {
+        color: rgba(255, 255, 255);
+        font-weight: 400;
+        font-size: 14px;
+        line-height: 17px;
+
+        .required {
+            color: #FF6C6C;
+        }
+    }
+
+    input {
+        padding: 9px 16px;
+        border-radius: 15px;
+        background: #90A1B91A;
+        color: #fff;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        border: 1px solid #90A1B91A;
+
+        &::placeholder {
+            color: #68717E;
+        }
+
+        &:focus {
+            outline: none;
+            border: 1px solid #60F7D1;
+        }
+
+        &.error {
+            color: #FF6C6C;
+            border: 1px solid #FF6C6C;
+            background: rgba(255, 108, 108, 0.1);
+        }
+    }
+
+    .error-message {
+        color: #FF6C6C;
+        font-size: 12px;
+        line-height: 15px;
+        margin-top: -8px;
+        animation: fadeIn 0.3s ease;
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+// 步驟描述樣式
+.step-description {
+    color: #fff;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 17px;
+}
+
+// 按鈕容器樣式
+.button-container {
+    position: fixed;
+    bottom: 44px;
+    left: 0;
+    right: 0;
+    padding: 10px 19px 0px;
+    display: flex;
+    gap: 12px;
+}
+
+// 導航按鈕樣式
+.nav-btn {
+    flex: 1;
+    padding: 14px 24px;
+    border-radius: 24px;
+    border: none;
+    font-size: 16px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: linear-gradient(90deg, #55FBAB 0%, #67F4E8 100%);
+    color: #1D2B27;
+
+    &:disabled {
+        color: #BCBCBC;
+        background: linear-gradient(270deg, rgba(160, 160, 160, 0.8) 0%, rgba(130, 130, 130, 0.8) 100%);
+    }
+}
