@@ -43,7 +43,6 @@
   flex-direction: column;
   min-height: 100vh;
   width: 100%;
-  padding-bottom: 100px;
 }
 
 .layout-header {

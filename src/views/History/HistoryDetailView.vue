@@ -1,48 +1,47 @@
 <template>
-  <MainLayout header="充電紀錄" :deleteIcon="false" :backIcon="true">
-    <div class="history-container">
-      <!-- 歷史記錄列表 -->
-      <div class="history-list">
-        <div 
-          v-for="record in chargingRecords" 
-          :key="record.id"
-          class="history-card"
-          @click="viewDetail(record.id)"
-        >
-          <div class="card-header">
-            <div class="station-info">
-              <h3 class="station-name">{{ record.stationName }}</h3>
-              <p class="station-address">{{ record.address }}</p>
-            </div>
-            <div class="status-badge" :class="record.status">
-              {{ getStatusText(record.status) }}
-            </div>
-          </div>
+  <MainLayout header="充電紀錄明細" :deleteIcon="false" :backIcon="true">
+    <div class="detail-container">
+      <!-- 車輛圖片 -->
+      <div class="car-image">
+        <img src="/images/detail-banner.png" alt="充電車輛">
+      </div>
+      <div class="detail-date">{{ chargingDate }}</div>
 
-          <div class="card-body">
-            <div class="info-row">
-              <span class="label">充電時間</span>
-              <span class="value">{{ record.date }}</span>
+      <!-- 充電資訊卡片 -->
+      <div class="detail-info">
+        <div class="info-card">
+          <div class="info-item">
+            <div class="flex items-end gap-[10px]">
+              <div class="info-value">{{ energy }}</div>
+              <div class="info-unit">kWh</div>
             </div>
-            <div class="info-row">
-              <span class="label">充電時長</span>
-              <span class="value">{{ record.duration }}</span>
-            </div>
-            <div class="info-row">
-              <span class="label">充電量</span>
-              <span class="value">{{ record.energy }} kWh</span>
-            </div>
-            <div class="info-row">
-              <span class="label">費用</span>
-              <span class="value highlight">NT$ {{ record.cost }}</span>
-            </div>
+            <div class="info-label">充電量</div>
+          </div>
+          <div class="divider"></div>
+          <div class="info-item">
+            <div class="info-value !font-[400]">${{ totalCost }}</div>
+            <div class="info-label">費用</div>
           </div>
         </div>
       </div>
 
-      <!-- 空狀態 -->
-      <div v-if="chargingRecords.length === 0" class="empty-state">
-        <p>尚無充電紀錄</p>
+      <!-- 費用計算 -->
+      <div class="cost-section">
+        <h3 class="section-title">費用計算</h3>
+        <div class="cost-list">
+          <div class="cost-item">
+            <span class="cost-label">尖峰費率（{{ peakRate }} 元 / 度）</span>
+            <span class="cost-value">{{ peakAmount }}</span>
+          </div>
+          <div class="cost-item">
+            <span class="cost-label">離峰費率（{{ offPeakRate }} 元 / 度）</span>
+            <span class="cost-value">{{ offPeakAmount }}</span>
+          </div>
+          <div class="cost-item total">
+            <span class="cost-label">訂單金額</span>
+            <span class="cost-value">${{ totalCost }}</span>
+          </div>
+        </div>
       </div>
     </div>
   </MainLayout>
@@ -50,167 +49,133 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRoute } from 'vue-router'
 import MainLayout from '@/components/MainLayout.vue'
 
-interface ChargingRecord {
-  id: number
-  stationName: string
-  address: string
-  date: string
-  duration: string
-  energy: number
-  cost: number
-  status: 'completed' | 'failed'
-}
+const route = useRoute()
+const recordId = route.params.id
 
 // 模擬數據
-const chargingRecords = ref<ChargingRecord[]>([
-  {
-    id: 1,
-    stationName: '台北市政府充電站',
-    address: '台北市信義區市府路1號',
-    date: '2024-01-20 14:30',
-    duration: '1小時15分',
-    energy: 25.5,
-    cost: 180,
-    status: 'completed'
-  },
-  {
-    id: 2,
-    stationName: '大安森林公園充電站',
-    address: '台北市大安區新生南路二段1號',
-    date: '2024-01-18 09:15',
-    duration: '45分鐘',
-    energy: 18.2,
-    cost: 130,
-    status: 'completed'
-  },
-  {
-    id: 3,
-    stationName: '信義商圈充電站',
-    address: '台北市信義區松高路12號',
-    date: '2024-01-15 16:45',
-    duration: '30分鐘',
-    energy: 12.8,
-    cost: 95,
-    status: 'failed'
-  }
-])
-
-const getStatusText = (status: string) => {
-  return status === 'completed' ? '已完成' : '失敗'
-}
-
-const viewDetail = (id: number) => {
-  console.log('View detail:', id)
-  // TODO: 導向詳細頁面
-}
+const chargingDate = ref('2026/11/30')
+const energy = ref(50)
+const totalCost = ref(300)
+const peakRate = ref(12.5)
+const peakAmount = ref(250)
+const offPeakRate = ref(6.5)
+const offPeakAmount = ref(50)
 </script>
 
 <style lang="scss" scoped>
-.history-container {
-  padding: 20px;
+.detail-container {
   min-height: calc(100vh - 100px);
 }
 
-.history-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.history-card {
-  background: rgba(99, 246, 217, 0.05);
-  border: 1px solid rgba(99, 246, 217, 0.2);
-  border-radius: 16px;
-  padding: 16px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-
-  &:hover {
-    border-color: #60F7D1;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(99, 246, 217, 0.15);
-  }
-
-  .card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 16px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-
-    .station-info {
-      flex: 1;
-
-      .station-name {
-        color: #fff;
-        font-size: 16px;
-        font-weight: 600;
-        margin: 0 0 4px 0;
-      }
-
-      .station-address {
-        color: rgba(255, 255, 255, 0.6);
-        font-size: 12px;
-        margin: 0;
-      }
-    }
-
-    .status-badge {
-      padding: 4px 12px;
-      border-radius: 12px;
-      font-size: 12px;
-      font-weight: 500;
-
-      &.completed {
-        background: rgba(85, 251, 171, 0.2);
-        color: #55FBAB;
-      }
-
-      &.failed {
-        background: rgba(255, 108, 108, 0.2);
-        color: #FF6C6C;
-      }
-    }
-  }
-
-  .card-body {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-
-    .info-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-
-      .label {
-        color: rgba(255, 255, 255, 0.6);
-        font-size: 14px;
-      }
-
-      .value {
-        color: #fff;
-        font-size: 14px;
-        font-weight: 500;
-
-        &.highlight {
-          color: #60F7D1;
-          font-weight: 600;
-        }
-      }
-    }
+.car-image {
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  margin: 11px 0;
+  img {
+    width: 100%;
+    object-fit: cover;
   }
 }
-
-.empty-state {
+.detail-date {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 400;
+  text-align: center;
+}
+.detail-info {
+  border-top: 1px solid #90A1B933;
+  border-bottom: 1px solid #90A1B933;
+  margin-top: 20px; 
+  margin-bottom: 24px;
+}
+.info-card {
+  background: linear-gradient(90deg, rgba(85, 251, 171, 0.1) 0%, rgba(103, 244, 232, 0.1) 100%);
+  border-radius: 20px;
+  padding: 23px 0;
+  margin: 24px 21px;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 300px;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 16px;
+  gap: 19px;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  .info-value {
+    font-size: 34px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .info-unit {
+    font-size: 34px;
+    font-weight: 700;
+  }
+
+  .info-label {
+    font-size: 14px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.6);
+  }
+}
+
+.divider {
+  width: 1px;
+  height: 60px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.cost-section {
+  padding: 0 16px;
+
+  .section-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 24px;
+  }
+}
+.cost-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.cost-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  .cost-label {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .cost-value {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  &.total {
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.5);
+
+    .cost-label {
+      font-size: 14px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .cost-value {
+      font-size: 14px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.8);
+    }
+  }
 }
 </style>

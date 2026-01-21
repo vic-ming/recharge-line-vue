@@ -1,216 +1,445 @@
 <template>
-  <MainLayout header="充電紀錄" :deleteIcon="false" :backIcon="true">
+  <MainLayout header="充電紀錄" :deleteIcon="false" :backIcon="false" :questionIcon="false">
     <div class="history-container">
-      <!-- 歷史記錄列表 -->
-      <div class="history-list">
-        <div 
-          v-for="record in chargingRecords" 
-          :key="record.id"
-          class="history-card"
-          @click="viewDetail(record.id)"
-        >
-          <div class="card-header">
-            <div class="station-info">
-              <h3 class="station-name">{{ record.stationName }}</h3>
-              <p class="station-address">{{ record.address }}</p>
-            </div>
-            <div class="status-badge" :class="record.status">
-              {{ getStatusText(record.status) }}
-            </div>
-          </div>
+      <!-- 車位選擇器 -->
+      <div class="parking-selector">
+        <img src="/icons/car.svg" alt="車位" class="car-icon">
+        <CustomSelect
+          v-model="selectedParking"
+          :options="parkingOptions"
+          placeholder="選擇車位"
+        />
+      </div>
 
-          <div class="card-body">
-            <div class="info-row">
-              <span class="label">充電時間</span>
-              <span class="value">{{ record.date }}</span>
-            </div>
-            <div class="info-row">
-              <span class="label">充電時長</span>
-              <span class="value">{{ record.duration }}</span>
-            </div>
-            <div class="info-row">
-              <span class="label">充電量</span>
-              <span class="value">{{ record.energy }} kWh</span>
-            </div>
-            <div class="info-row">
-              <span class="label">費用</span>
-              <span class="value highlight">NT$ {{ record.cost }}</span>
-            </div>
+      <!-- 查詢區間 -->
+      <div class="date-filter">
+        <div class="filter-header">
+          <span class="filter-title">查詢區間</span>
+          <span class="filter-subtitle">最多半年</span>
+        </div>
+        
+        <div class="filter-buttons">
+          <button 
+            v-for="option in dateOptions" 
+            :key="option.value"
+            class="filter-btn"
+            :class="{ active: selectedDateRange === option.value }"
+            @click="selectedDateRange = option.value"
+          >
+            {{ option.label }}
+          </button>
+        </div>
+
+        <div class="date-inputs">
+          <div class="date-input-wrapper">
+            <input type="date" v-model="startDate" class="date-input">
+            <img src="/icons/calendar.svg" alt="calendar" class="calendar-icon">
+          </div>
+          <span class="date-separator">-</span>
+          <div class="date-input-wrapper">
+            <input type="date" v-model="endDate" class="date-input">
+            <img src="/icons/calendar.svg" alt="calendar" class="calendar-icon">
           </div>
         </div>
       </div>
 
-      <!-- 空狀態 -->
-      <div v-if="chargingRecords.length === 0" class="empty-state">
-        <p>尚無充電紀錄</p>
+      <!-- 總計區塊 -->
+      <div class="total-card">
+        <div class="total-label">區間總花費</div>
+        <div class="flex items-center gap-[10px]">
+          <div class="total-amount">${{ totalCost.toLocaleString() }}</div>
+          <div class="total-unit">/ {{ totalRecords }} 筆</div>
+        </div>
+        <div class="total-icon">
+          <img src="/images/bolt-green.png" alt="充電">
+        </div>
+      </div>
+
+      <!-- 充電紀錄列表 -->
+      <div class="records-section">
+        <h3 class="section-title">充電紀錄</h3>
+        <div class="records-list">
+          <div 
+            v-for="record in chargingRecords" 
+            :key="record.id"
+            class="record-card"
+            @click="goToDetail(record.id)"
+          >
+            <div class="record-icon">
+              <img src="/icons/charge.svg" alt="充電站">
+            </div>
+            <div class="record-info">
+              <div class="record-id">{{ record.stationId }}</div>
+              <div class="record-time">
+                <div>S: {{ record.startTime }}</div>
+                <div>E: {{ record.endTime }}</div>
+              </div>
+            </div>
+            <div class="record-details">
+              <div class="record-cost" :class="record.type">
+                {{ record.type === 'charge' ? '費用' : record.type === 'add' ? '加值' : '費用' }} {{ record.cost >= 0 ? '+' : '' }}{{ record.cost }}
+              </div>
+              <div class="record-energy">充電 {{ record.energy }}kWh</div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </MainLayout>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
 import MainLayout from '@/components/MainLayout.vue'
+import CustomSelect from '@/components/CustomSelect.vue'
 
-interface ChargingRecord {
-  id: number
-  stationName: string
-  address: string
-  date: string
-  duration: string
-  energy: number
-  cost: number
-  status: 'completed' | 'failed'
+const router = useRouter()
+
+const formatDate = (date: Date): string => {
+  return date.toISOString().split('T')[0] || ''
 }
 
-// 模擬數據
-const chargingRecords = ref<ChargingRecord[]>([
+const selectedParking = ref('B2-56')
+const selectedDateRange = ref('month1')
+const startDate = ref('')
+const endDate = ref('')
+const totalCost = ref(3990)
+const totalRecords = ref(12)
+
+let isInternalChange = false
+
+// 初始化日期
+const today = new Date()
+endDate.value = formatDate(today)
+const oneMonthAgo = new Date()
+oneMonthAgo.setMonth(today.getMonth() - 1)
+startDate.value = formatDate(oneMonthAgo)
+
+// 監聽預設區間變化
+watch(selectedDateRange, (newRange) => {
+  if (newRange === 'custom') return
+  
+  isInternalChange = true
+  const current = new Date()
+  endDate.value = formatDate(current)
+  
+  const start = new Date()
+  switch (newRange) {
+    case 'month1':
+      start.setMonth(current.getMonth() - 1)
+      break
+    case 'month3':
+      start.setMonth(current.getMonth() - 3)
+      break
+    case 'halfYear':
+      start.setMonth(current.getMonth() - 6)
+      break
+  }
+  startDate.value = formatDate(start)
+  
+  nextTick(() => {
+    isInternalChange = false
+  })
+})
+
+// 監聽日期手動變化
+watch([startDate, endDate], () => {
+  if (!isInternalChange) {
+    selectedDateRange.value = 'custom'
+  }
+})
+
+const parkingOptions = [
+  { value: 'B2-56', label: 'B2-56' },
+  { value: 'B2-57', label: 'B2-57' },
+  { value: 'B2-58', label: 'B2-58' }
+]
+
+const dateOptions = [
+  { value: 'month1', label: '近一個月' },
+  { value: 'month3', label: '近三個月' },
+  { value: 'halfYear', label: '近半年' },
+  { value: 'custom', label: '自訂' }
+]
+
+const chargingRecords = ref([
   {
     id: 1,
-    stationName: '台北市政府充電站',
-    address: '台北市信義區市府路1號',
-    date: '2024-01-20 14:30',
-    duration: '1小時15分',
-    energy: 25.5,
-    cost: 180,
-    status: 'completed'
+    stationId: 'ABCD-8888',
+    startTime: '2025/11/30 12:30:00',
+    endTime: '2025/11/30 18:30:00',
+    cost: -300,
+    energy: 50,
+    type: 'charge'
   },
   {
     id: 2,
-    stationName: '大安森林公園充電站',
-    address: '台北市大安區新生南路二段1號',
-    date: '2024-01-18 09:15',
-    duration: '45分鐘',
-    energy: 18.2,
-    cost: 130,
-    status: 'completed'
+    stationId: 'ABCD-8888',
+    startTime: '2025/11/30 12:30:00',
+    endTime: '2025/11/30 18:30:00',
+    cost: 300,
+    energy: 50,
+    type: 'add'
   },
   {
     id: 3,
-    stationName: '信義商圈充電站',
-    address: '台北市信義區松高路12號',
-    date: '2024-01-15 16:45',
-    duration: '30分鐘',
-    energy: 12.8,
-    cost: 95,
-    status: 'failed'
+    stationId: 'ABCD-8888',
+    startTime: '2025/11/30 12:30:00',
+    endTime: '2025/11/30 18:30:00',
+    cost: -600,
+    energy: 50,
+    type: 'charge'
   }
 ])
+const goToDetail = (id: number) => {
 
-const getStatusText = (status: string) => {
-  return status === 'completed' ? '已完成' : '失敗'
-}
-
-const viewDetail = (id: number) => {
-  console.log('View detail:', id)
-  // TODO: 導向詳細頁面
+  router.push(`/charging-history/${id}`)
 }
 </script>
 
 <style lang="scss" scoped>
 .history-container {
-  padding: 20px;
+  padding: 24px 0;
   min-height: calc(100vh - 100px);
 }
 
-.history-list {
+.parking-selector {
   display: flex;
-  flex-direction: column;
-  gap: 16px;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding: 0 16px;
+
+  .car-icon {
+    width: 24px;
+    height: 24px;
+    position: relative;
+    top: 11px;
+  }
 }
 
-.history-card {
-  background: rgba(99, 246, 217, 0.05);
-  border: 1px solid rgba(99, 246, 217, 0.2);
-  border-radius: 16px;
-  padding: 16px;
-  cursor: pointer;
-  transition: all 0.3s ease;
+.date-filter {
+  margin-bottom: 24px;
+  padding: 0 16px;
 
-  &:hover {
-    border-color: #60F7D1;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(99, 246, 217, 0.15);
-  }
-
-  .card-header {
+  .filter-header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 16px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    align-items: center;
+    margin-bottom: 24px;
 
-    .station-info {
-      flex: 1;
-
-      .station-name {
-        color: #fff;
-        font-size: 16px;
-        font-weight: 600;
-        margin: 0 0 4px 0;
-      }
-
-      .station-address {
-        color: rgba(255, 255, 255, 0.6);
-        font-size: 12px;
-        margin: 0;
-      }
+    .filter-title {
+      font-size: 16px;
+      font-weight: 500;
+      color: #fff;
     }
 
-    .status-badge {
-      padding: 4px 12px;
-      border-radius: 12px;
-      font-size: 12px;
-      font-weight: 500;
-
-      &.completed {
-        background: rgba(85, 251, 171, 0.2);
-        color: #55FBAB;
-      }
-
-      &.failed {
-        background: rgba(255, 108, 108, 0.2);
-        color: #FF6C6C;
-      }
+    .filter-subtitle {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.5);
     }
   }
 
-  .card-body {
+  .filter-buttons {
     display: flex;
-    flex-direction: column;
     gap: 8px;
+    margin-bottom: 12px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    
+    &::-webkit-scrollbar {
+      display: none;
+    }
+    
+    scrollbar-width: none;
+  }
 
-    .info-row {
+  .filter-btn {
+    padding: 8px 16px;
+    background: #90A1B91A;
+    border: 1px solid #90A1B933;
+    border-radius: 20px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+
+    &.active {
+      background: linear-gradient(90deg, rgba(85, 251, 171, 0.1) 0%, rgba(103, 244, 232, 0.1) 100%);
+      border-color: #60F7D1;
+      color: #fff;
+    }
+  }
+
+  .date-inputs {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    .date-input-wrapper {
+      flex: 1;
+      position: relative;
       display: flex;
-      justify-content: space-between;
       align-items: center;
 
-      .label {
-        color: rgba(255, 255, 255, 0.6);
-        font-size: 14px;
-      }
-
-      .value {
+      .date-input {
+        width: 100%;
+        padding: 9px 40px 9px 16px;
+        border-radius: 15px;
+        background: #90A1B91A;
         color: #fff;
         font-size: 14px;
-        font-weight: 500;
+        border: 1px solid #90A1B91A;
+        appearance: none;
+        
+        &::-webkit-calendar-picker-indicator {
+          position: absolute;
+          right: 0;
+          top: 0;
+          width: 100%;
+          height: 100%;
+          opacity: 0;
+          cursor: pointer;
+        }
 
-        &.highlight {
-          color: #60F7D1;
-          font-weight: 600;
+        &:focus {
+          outline: none;
+          border-color: #60F7D1;
         }
       }
+
+      .calendar-icon {
+        position: absolute;
+        right: 16px;
+        width: 20px;
+        height: 20px;
+        pointer-events: none;
+      }
+    }
+
+    .date-separator {
+      color: rgba(255, 255, 255, 0.5);
     }
   }
 }
 
-.empty-state {
+.total-card {
+  background: linear-gradient(90deg, rgba(85, 251, 171, 0.2) 0%, rgba(103, 244, 232, 0) 100%);
+  margin: 0 16px 24px 16px;
+  border-radius: 20px;
+  padding: 16px 18px;
+  position: relative;
+  overflow: hidden;
+  .total-label {
+    font-size: 14px;
+    color: #60F7D1;
+    margin-bottom: 8px;
+  }
+
+  .total-amount {
+    font-size: 24px;
+    font-weight: 500;
+    color: #fff;
+  }
+
+  .total-unit {
+    font-size: 14px;
+    color: #A7B5C9;
+  }
+
+  .total-icon {
+    position: absolute;
+    right: 37px;
+    bottom: 0;
+    width: 50px;
+    img {
+      width: 100%;
+    }
+  }
+}
+
+.records-section {
+  border-top: 1px solid #90A1B933;
+  padding: 24px 12px 0;
+  .section-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 24px;
+  }
+}
+
+.records-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.record-card {
+  background: #90A1B91A;
+  border-radius: 16px;
+  padding: 16px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  min-height: 300px;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 16px;
+  gap: 10px;
+
+  .record-icon {
+    width: 40px;
+    height: 40px;
+    background: #393F47;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    img {
+      width: 24px;
+      height: 24px;
+    }
+  }
+
+  .record-info {
+    flex: 1;
+
+    .record-id {
+      font-size: 16px;
+      font-weight: 500;
+      color: #60F7D1;
+      margin-bottom: 8px;
+    }
+
+    .record-time {
+      font-size: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+  }
+
+  .record-details {
+    text-align: right;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+
+    .record-cost {
+      font-size: 16px;
+      font-weight: 500;
+      margin-bottom: 33px;
+      color: #60F7D1;
+    
+    }
+
+    .record-energy {
+      font-size: 16px;
+      font-weight: 500;
+      color: #fff;
+    }
+  }
 }
 </style>
