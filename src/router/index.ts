@@ -28,7 +28,6 @@ const router = createRouter({
             name: 'invoice',
             component: () => import('../views/InvoiceView.vue')
         },
-
         {
             path: '/charging-status',
             name: 'charging-status',
@@ -37,7 +36,12 @@ const router = createRouter({
         {
             path: '/charging-history',
             name: 'charging-history',
-            component: () => import('../views/ChargingHistoryView.vue')
+            component: () => import('../views/History/HistoryView.vue')
+        },
+        {
+            path: '/charging-history/:id',
+            name: 'charging-history-detail',
+            component: () => import('../views/History/HistoryDetailView.vue')
         },
         {
             path: '/member',

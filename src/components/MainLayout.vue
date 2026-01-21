@@ -5,6 +5,7 @@
       <img v-if="backIcon" class="back-icon" src="/icons/back.svg" @click="backFunction" alt="back" />
       <h1>{{ header }}</h1>
       <img v-if="deleteIcon" class="delete-icon" src="/icons/delete.svg" alt="delete" />
+      <img v-if="questionIcon" class="delete-icon" src="/icons/question.svg" alt="question" />
     </header>
 
     <!-- Main Content -->
@@ -22,6 +23,7 @@
     header: string,
     backIcon?: boolean,
     deleteIcon?: boolean,
+    questionIcon?: boolean,
     backFunction?: () => void
   }>()
 
@@ -52,6 +54,9 @@
   font-size: 18px;
   line-height: 28px;
   position: relative;
+  h1{
+    display: inline-block;
+  }
 
   .back-icon {
     position: absolute;
