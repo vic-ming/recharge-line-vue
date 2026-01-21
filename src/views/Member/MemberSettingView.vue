@@ -68,7 +68,7 @@
           <label>車位號 <span class="required">*</span></label>
           <div class="parking-list">
             <div 
-              v-for="(parking, index) in formData.parkingSpots" 
+              v-for="(_, index) in formData.parkingSpots" 
               :key="index"
               class="parking-item"
             >

@@ -49,11 +49,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRoute } from 'vue-router'
 import MainLayout from '@/components/MainLayout.vue'
-
-const route = useRoute()
-const recordId = route.params.id
 
 // 模擬數據
 const chargingDate = ref('2026/11/30')

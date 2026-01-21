@@ -19,6 +19,11 @@ const router = createRouter({
             component: () => import('../views/BalanceView.vue')
         },
         {
+            path: '/deposit',
+            name: 'deposit',
+            component: () => import('../views/DepositView.vue')
+        },
+        {
             path: '/pay-way',
             name: 'pay-way',
             component: () => import('../views/PayWayView.vue')
