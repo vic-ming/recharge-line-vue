@@ -136,10 +136,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
 import MainLayout from '@/components/MainLayout.vue'
-
-const router = useRouter()
 
 const steps = ['註冊資訊', '驗證手機']
 const currentStep = ref(0)

@@ -186,6 +186,7 @@ const handleSubmit = () => {
 }
 
 // 處理 Alert 確認按鈕
+// @ts-ignore - Used in template @button-click event
 const handleAlertConfirm = () => {
   router.push('/member')
 }

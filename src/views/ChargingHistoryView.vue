@@ -50,10 +50,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
 import MainLayout from '@/components/MainLayout.vue'
-
-const router = useRouter()
 
 interface ChargingRecord {
   id: number

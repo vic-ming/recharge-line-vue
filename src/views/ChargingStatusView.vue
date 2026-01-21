@@ -41,10 +41,7 @@
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
 import MainLayout from '@/components/MainLayout.vue'
-
-const router = useRouter()
 
 const handleStop = () => {
   // TODO: 停止充電邏輯

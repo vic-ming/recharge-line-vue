@@ -7,12 +7,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
 import MainLayout from '@/components/MainLayout.vue'
-
-const router = useRouter()
-
 </script>
 
 <style lang="scss" scoped>
