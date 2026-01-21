@@ -1,11 +1,10 @@
 <template>
-  <MainLayout header="充電金餘額" :deleteIcon="false" :backIcon="true">
+  <MainLayout header="充電金餘額" :deleteIcon="true" :backIcon="false">
     <div class="balance-container">
       <!-- 圓形餘額顯示 -->
       <div class="balance-wheel">
         <div class="balance-label">目前餘額</div>
         <div class="balance-amount">${{ balance.toLocaleString() }}</div>
-        <div v-if="balance === 0" class="balance-note">可用電度約 450 kWh</div>
       </div>
 
       <!-- 立即儲值按鈕 -->

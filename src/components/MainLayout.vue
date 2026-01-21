@@ -4,7 +4,7 @@
     <header class="layout-header">
       <img v-if="backIcon" class="back-icon" src="/icons/back.svg" @click="backFunction" alt="back" />
       <h1>{{ header }}</h1>
-      <img v-if="deleteIcon" class="delete-icon" src="/icons/delete.svg" alt="delete" />
+      <img v-if="deleteIcon" class="delete-icon" src="/icons/delete.svg" alt="delete" @click="deleteFunction" />
       <img v-if="questionIcon" class="delete-icon" src="/icons/question.svg" alt="question" />
     </header>
 
@@ -33,6 +33,10 @@
 
   const backFunction = () => {
     emit('back')
+    router.back()
+  }
+
+  const deleteFunction = () => {
     router.back()
   }
 </script>

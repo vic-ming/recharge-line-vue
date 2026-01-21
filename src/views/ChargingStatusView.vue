@@ -1,5 +1,5 @@
 <template>
-  <MainLayout header="" :deleteIcon="false" :backIcon="true" :questionIcon="true">
+  <MainLayout header="" :deleteIcon="true" :backIcon="false" :questionIcon="false">
     <div class="charging-container">
       <!-- 車位選擇器 -->
       <div class="parking-selector">

@@ -1,5 +1,5 @@
 <template>
-  <MainLayout header="會員中心" :deleteIcon="false" :backIcon="false">
+  <MainLayout header="會員中心" :deleteIcon="true" :backIcon="false">
     <div class="member-container">
       <div class="member-card">
         <img class="card-bg" src="/images/card-bg.png" alt="" />

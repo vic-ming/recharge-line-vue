@@ -55,15 +55,6 @@
           確定儲值
         </button>
       </div>
-
-      <!-- 成功提示 -->
-      <BottomAlert 
-        v-model="showAlert"
-        icon="/icons/success.svg"
-        title="儲值成功！"
-        button-text="確定"
-        @button-click="handleAlertConfirm"
-      />
     </div>
   </MainLayout>
 </template>
@@ -72,25 +63,19 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import MainLayout from '@/components/MainLayout.vue'
-import BottomAlert from '@/components/BottomAlert.vue'
 
 const router = useRouter()
 
 const amountPresets = [1000, 2000, 3000, 5000, 7000, 10000]
 const selectedAmount = ref<number | null>(null)
-const selectedPayment = ref<string | null>('card')
-const showAlert = ref(false)
+const selectedPayment = ref<string | null>(null)
 
 const isValid = computed(() => selectedAmount.value !== null && selectedPayment.value !== null)
 
 const handleDeposit = () => {
-  if (isValid.value) {
-    showAlert.value = true
+  if (selectedPayment.value === 'card') {
+    router.push('/pay-way')
   }
-}
-
-const handleAlertConfirm = () => {
-  router.push('/balance')
 }
 </script>
 
@@ -188,7 +173,7 @@ const handleAlertConfirm = () => {
   left: 0;
   right: 0;
   padding: 20px 19px 40px;
-  background: #1A202C;
+
 }
 
 .confirm-btn {

@@ -1,5 +1,5 @@
 <template>
-  <MainLayout header="充電紀錄" :deleteIcon="false" :backIcon="false" :questionIcon="false">
+  <MainLayout header="充電紀錄" :deleteIcon="true" :backIcon="false" :questionIcon="false">
     <div class="history-container">
       <!-- 車位選擇器 -->
       <div class="parking-selector">
@@ -160,7 +160,6 @@ const dateOptions = [
   { value: 'month1', label: '近一個月' },
   { value: 'month3', label: '近三個月' },
   { value: 'halfYear', label: '近半年' },
-  { value: 'custom', label: '自訂' }
 ]
 
 const chargingRecords = ref([
