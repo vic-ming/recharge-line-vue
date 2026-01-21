@@ -10,16 +10,16 @@
           <p class="menu-description">註冊成為會員</p>
         </div>
 
-        <!-- 充電金餘額 -->
-        <div class="menu-card" @click="goToBalance">
-          <h3 class="menu-title">充電金餘額</h3>
-          <p class="menu-description">查看您的充電金額度</p>
-        </div>
-
         <!-- 會員中心 -->
         <div class="menu-card" @click="goToMember">
           <h3 class="menu-title">會員中心</h3>
           <p class="menu-description">管理個人資料與設定</p>
+        </div>
+
+        <!-- 充電金餘額 -->
+        <div class="menu-card" @click="goToBalance">
+          <h3 class="menu-title">充電金餘額</h3>
+          <p class="menu-description">查看您的充電金額度</p>
         </div>
 
         <!-- 充電狀態 -->

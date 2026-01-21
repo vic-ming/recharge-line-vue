@@ -14,6 +14,11 @@ const router = createRouter({
             component: () => import('../views/RegisterView.vue')
         },
         {
+            path: '/balance',
+            name: 'balance',
+            component: () => import('../views/BalanceView.vue')
+        },
+        {
             path: '/pay-way',
             name: 'pay-way',
             component: () => import('../views/PayWayView.vue')
@@ -23,11 +28,7 @@ const router = createRouter({
             name: 'invoice',
             component: () => import('../views/InvoiceView.vue')
         },
-        {
-            path: '/balance',
-            name: 'balance',
-            component: () => import('../views/BalanceView.vue')
-        },
+
         {
             path: '/charging-status',
             name: 'charging-status',
