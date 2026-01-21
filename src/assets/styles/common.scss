@@ -44,6 +44,53 @@
             border: 1px solid #FF6C6C;
             background: rgba(255, 108, 108, 0.1);
         }
+
+        &.valid {
+            border: 1px solid #60F7D1;
+        }
+    }
+
+    // Select 選擇器樣式
+    .select-wrapper {
+        position: relative;
+
+        select {
+            width: 100%;
+            padding: 9px 40px 9px 16px;
+            border-radius: 15px;
+            border: 1px solid #60F7D1;
+            background: #90A1B91A;
+            color: #fff;
+            font-size: 14px;
+            appearance: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+
+            &:focus {
+                outline: none;
+                border-color: #60F7D1;
+            }
+
+            &.valid {
+                border-color: #60F7D1;
+            }
+
+            option {
+                background: #23252D;
+                color: #fff;
+                padding: 12px;
+            }
+        }
+
+        .select-arrow {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            pointer-events: none;
+        }
     }
 
     .error-message {

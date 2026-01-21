@@ -1,59 +1,129 @@
 <template>
-  <div class="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4">
-    <div class="max-w-4xl w-full space-y-8 text-center">
-      <h1 class="text-6xl font-extrabold tracking-tight bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent animate-pulse">
-        Vue 3 + Tailwind 4 + Sass
-      </h1>
-      <p class="text-xl text-slate-400 max-w-2xl mx-auto">
-        A premium starter template featuring Vue 3, Vite, Tailwind CSS 4, Vue Router, and Sass.
-      </p>
-      
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
-        <div class="p-6 bg-slate-800/50 border border-slate-700 rounded-2xl hover:border-blue-500/50 transition-colors group">
-          <div class="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-            <span class="text-2xl">⚡</span>
-          </div>
-          <h3 class="text-xl font-bold mb-2">Vite Speed</h3>
-          <p class="text-slate-400 text-sm">Lightning fast HMR and optimized builds.</p>
+  <MainLayout header="充電金餘額" :deleteIcon="false" :backIcon="true">
+    <div class="balance-container">
+      <div class="balance-card">
+        <h2 class="balance-label">當前餘額</h2>
+        <div class="balance-amount">
+          <span class="currency">NT$</span>
+          <span class="amount">1,234</span>
         </div>
-        
-        <div class="p-6 bg-slate-800/50 border border-slate-700 rounded-2xl hover:border-emerald-500/50 transition-colors group">
-          <div class="w-12 h-12 bg-emerald-500/10 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-            <span class="text-2xl">🎨</span>
-          </div>
-          <h3 class="text-xl font-bold mb-2">Tailwind 4</h3>
-          <p class="text-slate-400 text-sm">Next-gen CSS-first utility engine.</p>
-        </div>
-        
-        <div class="p-6 bg-slate-800/50 border border-slate-700 rounded-2xl hover:border-purple-500/50 transition-colors group">
-          <div class="w-12 h-12 bg-purple-500/10 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-            <span class="text-2xl">💅</span>
-          </div>
-          <h3 class="text-xl font-bold mb-2">Sass Power</h3>
-          <p class="text-slate-400 text-sm">Advanced styling with SCSS features.</p>
-        </div>
+        <p class="balance-note">充電金可用於充電服務付款</p>
       </div>
 
-      <div class="mt-12">
-        <router-link to="/about" class="inline-flex items-center px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-full font-bold transition-all hover:shadow-[0_0_20px_rgba(37,99,235,0.4)]">
-          Learn More
-        </router-link>
+      <div class="action-buttons">
+        <button class="action-btn primary" @click="goToRecharge">
+          <span>儲值</span>
+        </button>
+        <button class="action-btn secondary" @click="goToHistory">
+          <span>交易紀錄</span>
+        </button>
       </div>
     </div>
-  </div>
+  </MainLayout>
 </template>
 
-<style lang="scss" scoped>
-.animate-pulse {
-  animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+<script setup lang="ts">
+import { useRouter } from 'vue-router'
+import MainLayout from '@/components/MainLayout.vue'
+
+const router = useRouter()
+
+const goToRecharge = () => {
+  router.push('/pay-way')
 }
 
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
+const goToHistory = () => {
+  // TODO: 導向交易紀錄頁面
+  console.log('Go to transaction history')
+}
+</script>
+
+<style lang="scss" scoped>
+.balance-container {
+  padding: 40px 20px;
+}
+
+.balance-card {
+  background: linear-gradient(135deg, rgba(99, 246, 217, 0.15) 0%, rgba(85, 251, 171, 0.1) 100%);
+  border: 1px solid rgba(99, 246, 217, 0.3);
+  border-radius: 24px;
+  padding: 40px 24px;
+  text-align: center;
+  margin-bottom: 32px;
+
+  .balance-label {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+    font-weight: 400;
+    margin: 0 0 16px 0;
   }
-  50% {
-    opacity: 0.8;
+
+  .balance-amount {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 16px;
+
+    .currency {
+      color: #60F7D1;
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    .amount {
+      color: #fff;
+      font-size: 48px;
+      font-weight: 700;
+      line-height: 1;
+    }
+  }
+
+  .balance-note {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 12px;
+    margin: 0;
+  }
+}
+
+.action-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.action-btn {
+  padding: 14px 24px;
+  border-radius: 24px;
+  border: none;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &.primary {
+    background: linear-gradient(90deg, #55FBAB 0%, #67F4E8 100%);
+    color: #1D2B27;
+
+    &:hover {
+      opacity: 0.9;
+      transform: translateY(-2px);
+    }
+  }
+
+  &.secondary {
+    background: rgba(99, 246, 217, 0.1);
+    border: 1px solid #60F7D1;
+    color: #60F7D1;
+
+    &:hover {
+      background: rgba(99, 246, 217, 0.2);
+      transform: translateY(-2px);
+    }
+  }
+
+  &:active {
+    transform: translateY(0);
   }
 }
 </style>

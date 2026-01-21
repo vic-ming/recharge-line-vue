@@ -65,7 +65,7 @@ const handleButtonClick = () => {
   width: 100%;
   background: #23252D;
   border-radius: 16px 16px 0 0;
-  padding: 30px 20px 10px;
+  padding: 30px 20px 30px;
 }
 
 .alert-content {

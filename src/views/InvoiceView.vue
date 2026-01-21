@@ -1,60 +1,73 @@
 <template>
   <MainLayout header="選擇開立發票方式" :deleteIcon="false" :backIcon="true">
     <!-- Main Content -->
-    <div class="inovice-container">
+    <div class="invoice-container">
       <div class="form-step">
+        <!-- 發票開立方式 -->
         <div class="form-group">
-          <label for="cardNumber">卡號 <span class="required">*</span></label>
-          <input 
-            id="cardNumber" 
-            v-model="formData.cardNumber" 
-            type="text" 
-            placeholder="xxxx-xxxx-xxxx-xxxx"
-            @input="formatCardNumber"
-            @blur="validateField('cardNumber')"
-            :class="{ 'error': errors.cardNumber }"
-            maxlength="19"
+          <label for="invoiceType">發票開立方式 <span class="required">*</span></label>
+          <CustomSelect
+            v-model="selectedInvoiceType"
+            :options="invoiceOptions"
+            placeholder="請選擇"
           />
-          <span v-if="errors.cardNumber" class="error-message">{{ errors.cardNumber }}</span>
         </div>
 
-        <div class="form-group">
-          <label for="expiryDate">有效期限 <span class="required">*</span></label>
+        <div class="form-group" v-if="selectedInvoiceType === 'mobile'">
+          <label for="mobileCarrier">手機條碼載具 <span class="required">*</span></label>
           <input 
-            id="expiryDate" 
-            v-model="formData.expiryDate" 
+            id="mobileCarrier" 
+            v-model="formData.mobileCarrier" 
             type="text" 
-            placeholder="MM/YY"
-            @input="formatExpiryDate"
-            @blur="validateField('expiryDate')"
-            :class="{ 'error': errors.expiryDate }"
-            maxlength="5"
+            placeholder="請輸入你的手機條碼載具"
+            @blur="validateField('mobileCarrier')"
+            :class="{ 'error': errors.mobileCarrier, 'valid': formData.mobileCarrier && !errors.mobileCarrier }"
+            maxlength="8"
           />
-          <span v-if="errors.expiryDate" class="error-message">{{ errors.expiryDate }}</span>
+          <span v-if="errors.mobileCarrier" class="error-message">{{ errors.mobileCarrier }}</span>
         </div>
 
-        <div class="form-group">
-          <label for="cvc">信用卡驗證碼 (CVC) <span class="required">*</span></label>
-          <input 
-            id="cvc" 
-            v-model="formData.cvc" 
-            type="text" 
-            placeholder="請輸入卡片背面的3位數字"
-            @blur="validateField('cvc')"
-            :class="{ 'error': errors.cvc }"
-            maxlength="3"
-          />
-          <span v-if="errors.cvc" class="error-message">{{ errors.cvc }}</span>
+        <div v-if="selectedInvoiceType === 'unified'">
+          <div class="form-group">
+            <label for="companyName">買受人抬頭 <span class="required">*</span></label>
+            <input 
+              id="companyName" 
+              v-model="formData.companyName" 
+              type="text" 
+              placeholder="請輸入買受人抬頭"
+              @blur="validateField('companyName')"
+              :class="{ 'error': errors.companyName, 'valid': formData.companyName && !errors.companyName }"
+            />
+            <span v-if="errors.companyName" class="error-message">{{ errors.companyName }}</span>
+          </div>
+          
+          <div class="form-group mt-[7px]">
+            <input 
+              id="taxId" 
+              v-model="formData.taxId" 
+              type="text" 
+              placeholder="請輸入統一編號"
+              @blur="validateField('taxId')"
+              :class="{ 'error': errors.taxId, 'valid': formData.taxId && !errors.taxId }"
+              maxlength="8"
+            />
+            <span v-if="errors.taxId" class="error-message">{{ errors.taxId }}</span>
+          </div>
         </div>
-        
-        <p class="step-description mt-[54px]">為確保卡片能正常使用，系統會試刷新台幣 1 元， 驗證過後會立即刷退。</p>
 
+        <!-- 注意事項 -->
+        <div class="notice-section">
+          <h3 class="notice-title">注意事項</h3>
+          <p class="notice-text">配合國稅局宣導政策，發票開立方式以電子發票為主。</p>
+        </div>
+
+        <!-- 送出按鈕 -->
         <button
           @click="handleSubmit" 
-          class="nav-btn next-btn mt-[6px]"
-          :disabled="!isFormValid"
+          class="nav-btn next-btn"
+          :disabled="!canSubmit"
         >
-          確認
+          送出
         </button>
       </div>
     </div>
@@ -63,9 +76,9 @@
     <BottomAlert 
       v-model="showAlert"
       icon="/icons/success.svg"
-      title="儲值成功！"
+      title="開立發票成功！"
       button-text="確定"
-      @button-click="handleAlertConfirm"
+      @button-click="router.push('/balance')"
     />
   </MainLayout>
 </template>
@@ -74,107 +87,47 @@
 import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import MainLayout from '@/components/MainLayout.vue'
+import CustomSelect from '@/components/CustomSelect.vue'
 import BottomAlert from '@/components/BottomAlert.vue'
 
 const router = useRouter()
-const showAlert = ref(true)
+const selectedInvoiceType = ref('')
+const showAlert = ref(false)
+
+const invoiceOptions = [
+  { value: 'member', label: '會員載具' },
+  { value: 'mobile', label: '手機條碼載具' },
+  { value: 'unified', label: '三聯式統一發票' }
+]
 
 const formData = reactive({
-  cardNumber: '',
-  expiryDate: '',
-  cvc: ''
+  mobileCarrier: '',
+  companyName: '',
+  taxId: ''
 })
 
 const errors = reactive({
-  cardNumber: '',
-  expiryDate: '',
-  cvc: ''
+  mobileCarrier: '',
+  companyName: '',
+  taxId: ''
 })
-
-// 格式化卡號（每4位加空格）
-const formatCardNumber = (event: Event) => {
-  const input = event.target as HTMLInputElement
-  let value = input.value.replace(/\s/g, '').replace(/\D/g, '')
-  
-  // 每4位數字加一個空格
-  const formatted = value.match(/.{1,4}/g)?.join(' ') || value
-  formData.cardNumber = formatted
-}
-
-// 格式化有效期限（MM/YY）
-const formatExpiryDate = (event: Event) => {
-  const input = event.target as HTMLInputElement
-  let value = input.value.replace(/\D/g, '')
-  
-  if (value.length >= 2) {
-    value = value.slice(0, 2) + '/' + value.slice(2, 4)
-  }
-  
-  formData.expiryDate = value
-}
-
-// Luhn 演算法驗證卡號
-const luhnCheck = (cardNumber: string): boolean => {
-  const digits = cardNumber.replace(/\s/g, '').split('').map(Number)
-  let sum = 0
-  let isEven = false
-  
-  for (let i = digits.length - 1; i >= 0; i--) {
-    const currentDigit = digits[i]
-    if (currentDigit === undefined) continue
-    
-    let digit = currentDigit
-    
-    if (isEven) {
-      digit *= 2
-      if (digit > 9) {
-        digit -= 9
-      }
-    }
-    
-    sum += digit
-    isEven = !isEven
-  }
-  
-  return sum % 10 === 0
-}
-
-// 驗證有效期限
-const validateExpiry = (expiry: string): boolean => {
-  const [month, year] = expiry.split('/').map(Number)
-  
-  if (!month || !year) return false
-  if (month < 1 || month > 12) return false
-  
-  const currentDate = new Date()
-  const currentYear = currentDate.getFullYear() % 100 // 取後兩位
-  const currentMonth = currentDate.getMonth() + 1
-  
-  if (year < currentYear) return false
-  if (year === currentYear && month < currentMonth) return false
-  
-  return true
-}
 
 // 驗證規則
 const validators = {
-  cardNumber: (value: string) => {
-    const cleanValue = value.replace(/\s/g, '')
-    if (!cleanValue) return '請輸入卡號'
-    if (!/^\d+$/.test(cleanValue)) return '卡號只能包含數字'
-    if (cleanValue.length !== 16) return '卡號必須為16位數字'
-    if (!luhnCheck(value)) return '卡號格式不正確'
+  mobileCarrier: (value: string) => {
+    if (!value.trim()) return '請輸入手機條碼載具'
+    if (value.length !== 8) return '手機條碼載具必須為8碼'
+    if (!/^\/[A-Z0-9.+-]{7}$/.test(value)) return '手機條碼格式不正確（格式：/XXXXXXX）'
     return ''
   },
-  expiryDate: (value: string) => {
-    if (!value) return '請輸入有效期限'
-    if (!/^\d{2}\/\d{2}$/.test(value)) return '格式必須為 MM/YY'
-    if (!validateExpiry(value)) return '有效期限無效或已過期'
+  companyName: (value: string) => {
+    if (!value.trim()) return '請輸入買受人抬頭'
+    if (value.trim().length < 2) return '買受人抬頭至少需要2個字元'
     return ''
   },
-  cvc: (value: string) => {
-    if (!value) return '請輸入CVC'
-    if (!/^\d{3}$/.test(value)) return 'CVC必須為3位數字'
+  taxId: (value: string) => {
+    if (!value.trim()) return '請輸入統一編號'
+    if (!/^\d{8}$/.test(value)) return '統一編號必須為8位數字'
     return ''
   }
 }
@@ -186,37 +139,50 @@ const validateField = (field: keyof typeof formData) => {
   }
 }
 
-// 驗證所有欄位
-const validateAllFields = () => {
-  let isValid = true
-  Object.keys(formData).forEach(field => {
-    validateField(field as keyof typeof formData)
-    if (errors[field as keyof typeof errors]) isValid = false
-  })
-  return isValid
-}
-
-// 計算表單是否有效
-const isFormValid = computed(() => {
-  return formData.cardNumber.trim() !== '' &&
-         formData.expiryDate.trim() !== '' &&
-         formData.cvc.trim() !== '' &&
-         !errors.cardNumber &&
-         !errors.expiryDate &&
-         !errors.cvc
+// 檢查是否可以提交
+const canSubmit = computed(() => {
+  if (!selectedInvoiceType.value) return false
+  
+  if (selectedInvoiceType.value === 'member') {
+    return true
+  }
+  
+  if (selectedInvoiceType.value === 'mobile') {
+    return formData.mobileCarrier.trim() !== '' && !errors.mobileCarrier
+  }
+  
+  if (selectedInvoiceType.value === 'unified') {
+    return formData.companyName.trim() !== '' && 
+           formData.taxId.trim() !== '' && 
+           !errors.companyName && 
+           !errors.taxId
+  }
+  
+  return false
 })
 
-// 處理提交
 const handleSubmit = () => {
-  if (validateAllFields()) {
-    console.log('Credit card info:', {
-      cardNumber: formData.cardNumber.replace(/\s/g, ''),
-      expiryDate: formData.expiryDate,
-      cvc: formData.cvc
-    })
-    // 顯示成功提示
-    showAlert.value = true
+  if (!canSubmit.value) return
+  
+  // 根據選擇的類型驗證對應欄位
+  if (selectedInvoiceType.value === 'mobile') {
+    validateField('mobileCarrier')
+    if (errors.mobileCarrier) return
   }
+  
+  if (selectedInvoiceType.value === 'unified') {
+    validateField('companyName')
+    validateField('taxId')
+    if (errors.companyName || errors.taxId) return
+  }
+  
+  console.log('Invoice data:', {
+    type: selectedInvoiceType.value,
+    ...formData
+  })
+  
+  // 顯示成功提示
+  showAlert.value = true
 }
 
 // 處理 Alert 確認按鈕
@@ -228,9 +194,33 @@ const handleAlertConfirm = () => {
 <style lang="scss" scoped>  
 @import '@/assets/styles/common.scss';
 
-.inovice-container {
+.invoice-container {
   padding: 0 19px;
   margin-top: 40px;
   min-height: 400px;
+}
+
+.notice-section {
+  margin-top: 14px;
+  
+  .notice-title {
+    color: #fff;
+    font-size: 18px;
+    font-weight: 500;
+    line-height: 24px;
+    margin: 0 0 12px 0;
+  }
+
+  .notice-text {
+    color: #fff;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 22px;
+    margin: 0;
+  }
+}
+
+.nav-btn {
+  margin-top: 14px;
 }
 </style>
