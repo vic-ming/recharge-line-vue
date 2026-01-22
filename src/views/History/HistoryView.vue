@@ -32,12 +32,24 @@
 
         <div class="date-inputs">
           <div class="date-input-wrapper">
-            <input type="date" v-model="startDate" class="date-input">
+            <input 
+              type="date" 
+              v-model="startDate" 
+              class="date-input"
+              :min="minDate"
+              :max="maxDate"
+            >
             <img src="/icons/calendar.svg" alt="calendar" class="calendar-icon">
           </div>
           <span class="date-separator">-</span>
           <div class="date-input-wrapper">
-            <input type="date" v-model="endDate" class="date-input">
+            <input 
+              type="date" 
+              v-model="endDate" 
+              class="date-input"
+              :min="minDate"
+              :max="maxDate"
+            >
             <img src="/icons/calendar.svg" alt="calendar" class="calendar-icon">
           </div>
         </div>
@@ -106,11 +118,18 @@ const startDate = ref('')
 const endDate = ref('')
 const totalCost = ref(3990)
 const totalRecords = ref(12)
+const maxDate = ref('')
+const minDate = ref('')
 
 let isInternalChange = false
 
 // 初始化日期
 const today = new Date()
+maxDate.value = formatDate(today)
+const sixMonthsAgo = new Date()
+sixMonthsAgo.setMonth(today.getMonth() - 6)
+minDate.value = formatDate(sixMonthsAgo)
+
 endDate.value = formatDate(today)
 const oneMonthAgo = new Date()
 oneMonthAgo.setMonth(today.getMonth() - 1)
@@ -144,9 +163,20 @@ watch(selectedDateRange, (newRange) => {
 })
 
 // 監聽日期手動變化
-watch([startDate, endDate], () => {
+watch([startDate, endDate], ([newStart, newEnd]) => {
   if (!isInternalChange) {
     selectedDateRange.value = 'custom'
+    
+    // 限制日期範圍在半年內
+    if (newStart < minDate.value) {
+      startDate.value = minDate.value
+    }
+    if (newEnd > maxDate.value) {
+      endDate.value = maxDate.value
+    }
+    if (newStart > newEnd) {
+      startDate.value = newEnd
+    }
   }
 })
 
@@ -165,7 +195,7 @@ const dateOptions = [
 const chargingRecords = ref([
   {
     id: 1,
-    stationId: 'ABCD-8888',
+    stationId: 'WS-01-12',
     startTime: '2025/11/30 12:30:00',
     endTime: '2025/11/30 18:30:00',
     cost: -300,
@@ -174,7 +204,7 @@ const chargingRecords = ref([
   },
   {
     id: 2,
-    stationId: 'ABCD-8888',
+    stationId: 'WS-01-12',
     startTime: '2025/11/30 12:30:00',
     endTime: '2025/11/30 18:30:00',
     cost: 300,
@@ -183,7 +213,7 @@ const chargingRecords = ref([
   },
   {
     id: 3,
-    stationId: 'ABCD-8888',
+    stationId: 'WS-01-12',
     startTime: '2025/11/30 12:30:00',
     endTime: '2025/11/30 18:30:00',
     cost: -600,

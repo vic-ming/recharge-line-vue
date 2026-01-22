@@ -179,17 +179,18 @@ const handleDeposit = () => {
 .confirm-btn {
   width: 100%;
   height: 52px;
-  background: #60F7D1;
-  color: #1A202C;
+  background: linear-gradient(90deg, #55FBAB 0%, #67F4E8 100%);
+  color: #1D2B27;
   border: none;
   border-radius: 26px;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 400;
   cursor: pointer;
   transition: all 0.3s ease;
 
   &:disabled {
-    opacity: 0.5;
+    background: linear-gradient(270deg, rgba(160, 160, 160, 0.8) 0%, rgba(130, 130, 130, 0.8) 100%);
+    color: #BCBCBC;
     cursor: not-allowed;
   }
 
