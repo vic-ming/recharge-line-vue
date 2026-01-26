@@ -90,9 +90,12 @@
         <button
           @click="handleResend" 
           class="nav-btn next-btn mt-[49px]"
-          :disabled="countDown > 0"
+          :disabled="countDown > 0 || loading"
         >
-          <template v-if="countDown > 0">
+          <template v-if="loading">
+            發送中...
+          </template>
+          <template v-else-if="countDown > 0">
             重新發送 <span>({{ countDown }})</span>
           </template>
           <template v-else>
@@ -121,14 +124,14 @@
         class="nav-btn next-btn"
         :disabled="!isStep1Valid"
       >
-        下一步
+        {{ loading ? '註冊中...' : '下一步' }}
       </button>
       <button v-if="currentStep === 1"
         @click="handleSubmit" 
         class="nav-btn next-btn"
         :disabled="!isStep2Valid"
       >
-        送出
+        {{ loading ? '驗證中...' : '送出' }}
       </button>
     </div>
   </MainLayout>
@@ -138,11 +141,13 @@
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import MainLayout from '@/components/MainLayout.vue'
 import { useRouter } from 'vue-router'
+import { register, resendPhoneCode, verifyPhoneCode } from '@/services/api.service'
 
 const router = useRouter()
 
 const steps = ['註冊資訊', '驗證手機']
 const currentStep = ref(0)
+const loading = ref(false)
 
 const formData = reactive({
   name: '',
@@ -183,13 +188,25 @@ const startCountDown = () => {
 }
 
 // 重新發送驗證碼
-const handleResend = () => {
+const handleResend = async () => {
   if (countDown.value > 0) return
   
-  // TODO: 實際發送驗證碼的 API 呼叫
-  console.log('重新發送驗證碼')
-  alert('驗證碼已重新發送')
-  startCountDown()
+  loading.value = true
+  try {
+    const response = await resendPhoneCode()
+    
+    if (response.Code === 0 || response.Code === 1) {
+      alert('驗證碼已重新發送')
+      startCountDown()
+    } else {
+      alert(response.Message || '發送失敗，請稍後再試')
+    }
+  } catch (error) {
+    console.error('重新發送驗證碼失敗:', error)
+    alert('發送失敗，請稍後再試')
+  } finally {
+    loading.value = false
+  }
 }
 
 // 組件掛載時開始倒數
@@ -264,30 +281,73 @@ const isStep1Valid = computed(() => {
          !errors.name &&
          !errors.phone &&
          !errors.email &&
-         !errors.verificationCode
+         !errors.verificationCode &&
+         !loading.value
 })
 
 // 計算步驟2是否有效
 const isStep2Valid = computed(() => {
   return formData.phoneVerificationCode.trim() !== '' &&
-         !errors.phoneVerificationCode
+         !errors.phoneVerificationCode &&
+         !loading.value
 })
 
-// 處理下一步
-const handleNextStep = () => {
-  if (validateAllFields(['name', 'phone', 'email', 'verificationCode'])) {
-    currentStep.value++
-    // 進入驗證手機步驟時開始倒數
-    if (currentStep.value === 1) {
-      startCountDown()
+// 處理下一步（註冊）
+const handleNextStep = async () => {
+  if (!validateAllFields(['name', 'phone', 'email', 'verificationCode'])) {
+    return
+  }
+
+  loading.value = true
+  try {
+    const response = await register({
+      name: formData.name,
+      phone: formData.phone,
+      email: formData.email,
+      valicode: formData.verificationCode
+    })
+
+    if (response.Code === 0 || response.Code === 1) {
+      // 註冊成功，進入驗證手機步驟
+      currentStep.value++
+      // 進入驗證手機步驟時開始倒數
+      if (currentStep.value === 1) {
+        startCountDown()
+      }
+    } else {
+      // 顯示錯誤訊息
+      alert(response.Message || '註冊失敗，請稍後再試')
     }
+  } catch (error) {
+    console.error('註冊失敗:', error)
+    alert('註冊失敗，請檢查網路連線或稍後再試')
+  } finally {
+    loading.value = false
   }
 }
 
-// 處理提交
-const handleSubmit = () => {
-  if (validateAllFields(['phoneVerificationCode'])) {
-    currentStep.value++
+// 處理提交（驗證手機）
+const handleSubmit = async () => {
+  if (!validateAllFields(['phoneVerificationCode'])) {
+    return
+  }
+
+  loading.value = true
+  try {
+    const response = await verifyPhoneCode(formData.phoneVerificationCode)
+
+    if (response.Code === 0 || response.Code === 1) {
+      // 驗證成功，進入完成步驟
+      currentStep.value++
+    } else {
+      // 顯示錯誤訊息
+      alert(response.Message || '驗證失敗，請檢查驗證碼是否正確')
+    }
+  } catch (error) {
+    console.error('驗證失敗:', error)
+    alert('驗證失敗，請稍後再試')
+  } finally {
+    loading.value = false
   }
 }
 
