@@ -320,7 +320,7 @@ const handleNextStep = async () => {
     }
   } catch (error) {
     console.error('註冊失敗:', error)
-    alert('註冊失敗，請檢查網路連線或稍後再試')
+    alert('註冊失敗，請檢查網路連線或稍後再試' + JSON.stringify(error))
   } finally {
     loading.value = false
   }
