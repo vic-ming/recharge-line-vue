@@ -20,6 +20,7 @@ onMounted(async () => {
          // 如果有 state，通常表示是剛登入回來，讓其繼續執行後續初始化，或者視情況 return
        }
     }
+    alert('初始化開始')
 
     // 1. 初始化 LIFF
     await initializeLiff()
