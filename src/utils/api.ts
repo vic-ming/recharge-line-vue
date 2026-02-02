@@ -47,7 +47,6 @@ function buildUrl(endpoint: string, params?: Record<string, string | number | bo
         const urlObj = new URL(endpoint, API_URL)
         url = urlObj.toString()
     }
-    alert(url)
 
     // 添加查詢參數
     if (params && Object.keys(params).length > 0) {
@@ -109,6 +108,7 @@ export async function apiRequest<T = any>(
 
         // 檢查 HTTP 狀態碼
         if (!response.ok) {
+            alert(`HTTP Error: ${response.status} ${response.statusText}`)
             throw new Error(`HTTP Error: ${response.status} ${response.statusText}`)
         }
 
@@ -122,6 +122,7 @@ export async function apiRequest<T = any>(
 
         return data
     } catch (error) {
+        alert('API Request Failed:' + error)
         console.error('API Request Failed:', error)
         throw error
     }
