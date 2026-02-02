@@ -80,6 +80,7 @@ export async function apiRequest<T = any>(
 
     const url = buildUrl(endpoint, params)
 
+    alert(url)
     // 動態導入 liff 工具以獲取 LINE UID
     let lineUid: string | null = null
     try {

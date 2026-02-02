@@ -300,12 +300,14 @@ const handleNextStep = async () => {
 
   loading.value = true
   try {
+    alert(JSON.stringify(formData))
     const response = await register({
       name: formData.name,
       phone: formData.phone,
       email: formData.email,
       valicode: formData.verificationCode
     })
+    alert(JSON.stringify(response))
 
     if (response && response.success) {
       // 註冊成功，進入驗證手機步驟

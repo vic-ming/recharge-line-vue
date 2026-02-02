@@ -120,8 +120,10 @@ export interface PaymentApiResponse<T> {
 export async function register(data: Omit<RegisterRequest, 'line_uid'>) {
     const line_uid = await getLineUserId()
     if (!line_uid) {
+        alert('無法取得 LINE UID')
         throw new Error('無法取得 LINE UID')
     }
+
 
     return apiPost('api/register.jsp', {
         ...data,
