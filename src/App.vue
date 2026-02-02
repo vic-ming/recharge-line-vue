@@ -9,6 +9,18 @@ const route = useRoute()
 
 onMounted(async () => {
   try {
+    // 0. 檢查是否有 liff.state 需要導向
+    const params = new URLSearchParams(window.location.search)
+    const liffState = params.get('liff.state')
+    if (liffState) {
+       const targetPath = decodeURIComponent(liffState)
+       if (targetPath && targetPath.startsWith('/')) {
+         console.log('Redirecting to target path from liff.state:', targetPath)
+         router.replace(targetPath)
+         // 如果有 state，通常表示是剛登入回來，讓其繼續執行後續初始化，或者視情況 return
+       }
+    }
+
     // 1. 初始化 LIFF
     await initializeLiff()
 
