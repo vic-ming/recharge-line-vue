@@ -18,34 +18,29 @@ let liffInitPromise: Promise<void> | null = null
 export async function initializeLiff(): Promise<void> {
     // 如果已經初始化，直接返回
     if (isLiffInitialized) {
-        // alert('LIFF already initialized')
         return Promise.resolve()
     }
 
     // 如果正在初始化，返回現有的 Promise
     if (liffInitPromise) {
-        // alert('LIFF init already in progress')
         return liffInitPromise
     }
 
     // 檢查 ID
     if (!LIFF_ID) {
-        // alert('錯誤: LIFF_ID 未設定')
+        console.warn('LIFF_ID is missing')
         return Promise.reject(new Error('LIFF_ID is missing'))
     }
 
     // 開始初始化
-    // alert('開始執行 liff.init: ' + LIFF_ID)
     liffInitPromise = liff
         .init({ liffId: LIFF_ID })
         .then(() => {
             isLiffInitialized = true
             console.log('LIFF initialized successfully')
-            // alert('liff.init 完成')
         })
         .catch((error) => {
             console.error('LIFF initialization failed:', error)
-            // alert('liff.init 失敗: ' + error)
             liffInitPromise = null
             throw error
         })
@@ -59,17 +54,17 @@ export async function initializeLiff(): Promise<void> {
  */
 export async function getLineUserId(): Promise<string | null> {
     try {
+        // 開發模式：直接返回測試用的 UID，跳過 LIFF 初始化
+        if (import.meta.env.DEV) {
+            const mockUid = 'U3e8852614fb3b68bfcba1daa86df5c7e' // 開發測試用 UID
+            console.warn('⚠️ 開發模式：使用測試 LINE UID:', mockUid)
+            return mockUid
+        }
+
         await initializeLiff()
 
         if (!liff.isLoggedIn()) {
             console.warn('User is not logged in to LINE')
-
-            // 開發模式：如果不在 LINE 環境中，返回測試用的 UID
-            if (import.meta.env.DEV && !liff.isInClient()) {
-                const mockUid = 'U3e8852614fb3b68bfcba1daa86df5c7e' // 開發測試用 UID
-                console.warn('⚠️ 開發模式：使用測試 LINE UID:', mockUid)
-                return mockUid
-            }
 
             // 生產環境：導向登入
             liff.login()

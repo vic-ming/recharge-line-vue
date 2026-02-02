@@ -20,40 +20,35 @@ onMounted(async () => {
          // 如果有 state，通常表示是剛登入回來，讓其繼續執行後續初始化，或者視情況 return
        }
     }
-    // alert('初始化開始')
 
-    // 1. 初始化 LIFF
-    await initializeLiff()
+    // 1. 初始化 LIFF (僅在非開發模式，或開發模式下確實需要測試 LIFF 時執行)
+    if (!import.meta.env.DEV) {
+      await initializeLiff()
 
-    // alert('初始化成功')
-
-    // 2. 檢查是否登入
-    if (!liff.isLoggedIn()) {
-       // 未登入，執行登入並中止流程 (login 會導向 LINE 登入頁面)
-       liff.login()
-       return 
+      // 2. 檢查是否登入
+      if (!liff.isLoggedIn()) {
+         // 未登入，執行登入並中止流程
+         liff.login()
+         return 
+      }
+      
+      // 3. 確保取得到 UID
+      const profile = await liff.getProfile().catch(() => null)
+      if (!profile?.userId) {
+         console.error('無法取得 LINE Profile')
+         return
+      }
+    } else {
+      console.log('開發模式：跳過 LIFF 初始化與登入檢查')
     }
-    // alert('登入成功')
-    
-    // 3. 確保取得到 UID
-    const profile = await liff.getProfile().catch(() => null)
-    if (!profile?.userId) {
-       console.error('無法取得 LINE Profile')
-       // 視情況決定是否重試登入或顯示錯誤
-       return
-    }
 
-    // alert('取得 profile 成功')
-    // 4. 已登入且有 UID，再檢查會員資料
+    // 4. 檢查會員資料
     const res = await getMemberProfile()
     console.log('App Launch - Member Profile Response:', JSON.stringify(res)) 
-    // alert('取得會員資料成功')
-    // alert(JSON.stringify(res))
     // 判斷是否查無會員
     // 優先檢查 success: false + message
     const isSuccessFalse = res?.success === false;
     // 檢查 Code 是否不為成功代碼 (假設 1 是成功 (Code 1), 0 是失敗? 或 undefined) 
-    // 根據 api.service.ts，若非 0 或 1 會 log error。
     // 但此處 response 是直接 json。
     
     // 關鍵字檢查

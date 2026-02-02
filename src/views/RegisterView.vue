@@ -300,14 +300,14 @@ const handleNextStep = async () => {
 
   loading.value = true
   try {
-    alert(JSON.stringify(formData))
+
     const response = await register({
       name: formData.name,
       phone: formData.phone,
       email: formData.email,
       valicode: formData.verificationCode
     })
-    alert(JSON.stringify(response))
+
 
     if (response && response.success) {
       // 註冊成功，進入驗證手機步驟
@@ -322,7 +322,7 @@ const handleNextStep = async () => {
     }
   } catch (error) {
     console.error('註冊失敗:', error)
-    alert('註冊失敗，請檢查網路連線或稍後再試' + JSON.stringify(error))
+    alert('註冊失敗，請檢查網路連線或稍後再試')
   } finally {
     loading.value = false
   }

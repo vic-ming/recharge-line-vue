@@ -34,12 +34,10 @@ function buildUrl(endpoint: string, params?: Record<string, string | number | bo
     if (endpoint.startsWith('http://') || endpoint.startsWith('https://')) {
         return endpoint
     }
-    alert(API_URL)
-    alert(endpoint)
+
 
     // 檢查 API_URL 是否為相對路徑（用於開發環境代理）
     const isRelativePath = API_URL.startsWith('/')
-    alert(isRelativePath)
     let url: string
 
     if (isRelativePath) {
@@ -81,7 +79,7 @@ export async function apiRequest<T = any>(
     } = options
 
     const url = buildUrl(endpoint, params)
-    alert(url)
+
 
     // 動態導入 liff 工具以獲取 LINE UID
     let lineUid: string | null = null
