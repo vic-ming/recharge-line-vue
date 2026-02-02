@@ -108,7 +108,7 @@
         <img class="w-[120px] h-[120px] mx-auto mt-[33px]" src="/icons/finish.svg" alt="register">
         <p class="step-description text-center text-[16px] mt-[4px]">開始使用服務</p>
         <button
-          @click="router.back()" 
+          @click="router.push('/balance')" 
           class="nav-btn next-btn mt-[33px]"
         >
           確認
