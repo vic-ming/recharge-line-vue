@@ -124,7 +124,7 @@ export async function register(data: Omit<RegisterRequest, 'line_uid'>) {
         throw new Error('無法取得 LINE UID')
     }
 
-
+    alert(JSON.stringify(data))
     return apiPost('api/register.jsp', {
         ...data,
         line_uid
