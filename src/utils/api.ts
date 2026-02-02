@@ -80,14 +80,7 @@ export async function apiRequest<T = any>(
     const url = buildUrl(endpoint, params)
 
 
-    // 動態導入 liff 工具以獲取 LINE UID
-    let lineUid: string | null = null
-    try {
-        const { getLineUserId } = await import('./liff')
-        lineUid = await getLineUserId()
-    } catch (error) {
-        console.warn('Failed to get LINE UID:', error)
-    }
+
 
     const config: RequestInit = {
         method,
