@@ -20,12 +20,12 @@ onMounted(async () => {
          // 如果有 state，通常表示是剛登入回來，讓其繼續執行後續初始化，或者視情況 return
        }
     }
-    alert('初始化開始')
+    // alert('初始化開始')
 
     // 1. 初始化 LIFF
     await initializeLiff()
 
-    alert('初始化成功')
+    // alert('初始化成功')
 
     // 2. 檢查是否登入
     if (!liff.isLoggedIn()) {
@@ -33,7 +33,7 @@ onMounted(async () => {
        liff.login()
        return 
     }
-    alert('登入成功')
+    // alert('登入成功')
     
     // 3. 確保取得到 UID
     const profile = await liff.getProfile().catch(() => null)
@@ -43,12 +43,12 @@ onMounted(async () => {
        return
     }
 
-    alert('取得 profile 成功')
+    // alert('取得 profile 成功')
     // 4. 已登入且有 UID，再檢查會員資料
     const res = await getMemberProfile()
     console.log('App Launch - Member Profile Response:', JSON.stringify(res)) 
-    alert('取得會員資料成功')
-    alert(JSON.stringify(res))
+    // alert('取得會員資料成功')
+    // alert(JSON.stringify(res))
     // 判斷是否查無會員
     // 優先檢查 success: false + message
     const isSuccessFalse = res?.success === false;

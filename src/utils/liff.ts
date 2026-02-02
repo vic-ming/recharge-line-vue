@@ -30,7 +30,7 @@ export async function initializeLiff(): Promise<void> {
 
     // 檢查 ID
     if (!LIFF_ID) {
-        alert('錯誤: LIFF_ID 未設定')
+        // alert('錯誤: LIFF_ID 未設定')
         return Promise.reject(new Error('LIFF_ID is missing'))
     }
 
@@ -45,7 +45,7 @@ export async function initializeLiff(): Promise<void> {
         })
         .catch((error) => {
             console.error('LIFF initialization failed:', error)
-            alert('liff.init 失敗: ' + error)
+            // alert('liff.init 失敗: ' + error)
             liffInitPromise = null
             throw error
         })

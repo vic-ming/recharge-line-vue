@@ -4,7 +4,7 @@
     <header class="layout-header">
       <img v-if="backIcon" class="back-icon" src="/icons/back.svg" @click="backFunction" alt="back" />
       <h1>{{ header }}</h1>
-      <img v-if="deleteIcon" class="delete-icon" src="/icons/delete.svg" alt="delete" @click="deleteFunction" />
+      <img v-if="deleteIcon && !isInLineApp()" class="delete-icon" src="/icons/delete.svg" alt="delete" @click="deleteFunction" />
     </header>
 
     <!-- Main Content -->
@@ -35,14 +35,10 @@
     router.back()
   }
 
-  import { isInLineApp, closeLiff } from '@/utils/liff'
+  import { isInLineApp } from '@/utils/liff'
 
   const deleteFunction = () => {
-    if (isInLineApp()) {
-      closeLiff()
-    } else {
       router.back()
-    }
   }
 </script>
 
