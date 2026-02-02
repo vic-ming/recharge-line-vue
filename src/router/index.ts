@@ -29,11 +29,6 @@ const router = createRouter({
             component: () => import('../views/PayWayView.vue')
         },
         {
-            path: '/invoice',
-            name: 'invoice',
-            component: () => import('../views/InvoiceView.vue')
-        },
-        {
             path: '/charging-status',
             name: 'charging-status',
             component: () => import('../views/ChargingStatusView.vue')

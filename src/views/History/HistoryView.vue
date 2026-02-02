@@ -1,6 +1,7 @@
 <template>
-  <MainLayout header="充電紀錄" :deleteIcon="true" :backIcon="false" :questionIcon="false">
-    <div class="history-container">
+  <MainLayout header="充電紀錄" :deleteIcon="true" :backIcon="false">
+    <Loading v-if="loading" />
+    <div v-else class="history-container">
       <!-- 車位選擇器 -->
       <div class="parking-selector">
         <img src="/icons/car.svg" alt="車位" class="car-icon">
@@ -101,25 +102,45 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue'
+import { ref, watch, nextTick, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import MainLayout from '@/components/MainLayout.vue'
 import CustomSelect from '@/components/CustomSelect.vue'
+import Loading from '@/components/Loading.vue'
+import { getMemberProfile, getChargingRecords } from '@/services/api.service'
 
 const router = useRouter()
 
 const formatDate = (date: Date): string => {
-  return date.toISOString().split('T')[0] || ''
+  const yyyy = date.getFullYear()
+  const mm = String(date.getMonth() + 1).padStart(2, '0')
+  const dd = String(date.getDate()).padStart(2, '0')
+  return `${yyyy}/${mm}/${dd}`
 }
 
-const selectedParking = ref('B2-56')
+const selectedParking = ref('')
 const selectedDateRange = ref('month1')
 const startDate = ref('')
 const endDate = ref('')
-const totalCost = ref(3990)
-const totalRecords = ref(12)
+const totalCost = ref(0)
+const totalRecords = ref(0)
 const maxDate = ref('')
 const minDate = ref('')
+const parkingOptions = ref<{ value: string, label: string }[]>([])
+const loading = ref(false)
+
+// 介面定義
+interface ChargingRecord {
+  id: number
+  stationId: string
+  startTime: string
+  endTime: string
+  cost: number
+  energy: number
+  type: string
+}
+
+const chargingRecords = ref<ChargingRecord[]>([])
 
 let isInternalChange = false
 
@@ -130,10 +151,86 @@ const sixMonthsAgo = new Date()
 sixMonthsAgo.setMonth(today.getMonth() - 6)
 minDate.value = formatDate(sixMonthsAgo)
 
+// 預設今天為結束日期
 endDate.value = formatDate(today)
+
+// 預設一個月前為開始日期
 const oneMonthAgo = new Date()
 oneMonthAgo.setMonth(today.getMonth() - 1)
 startDate.value = formatDate(oneMonthAgo)
+
+const dateOptions = [
+  { value: 'month1', label: '近一個月' },
+  { value: 'month3', label: '近三個月' },
+  { value: 'halfYear', label: '近半年' },
+]
+
+// 載入資料
+const loadData = async () => {
+  loading.value = true
+  try {
+    // 1. 如果還沒載入車位，先載入
+    if (parkingOptions.value.length === 0) {
+      const profileRes = await getMemberProfile()
+      if (profileRes && profileRes.user_profile) {
+        const spaces = profileRes.user_profile.parking_spaces
+        if (Array.isArray(spaces) && spaces.length > 0) {
+          parkingOptions.value = spaces.map((space: string) => ({
+            value: space,
+            label: space
+          }))
+          // 預設選取第一個
+          if (!selectedParking.value) {
+            selectedParking.value = spaces[0]
+          }
+        }
+      }
+    }
+
+    // 2. 根據目前條件搜尋紀錄
+    if (selectedParking.value && startDate.value && endDate.value) {
+      const recordsRes = await getChargingRecords(startDate.value, endDate.value)
+      
+      if (recordsRes && recordsRes.data && Array.isArray(recordsRes.data)) {
+        // 找到目前選定車位的資料
+        const parkingData = recordsRes.data.find((item: any) => item.parking_space === selectedParking.value)
+        
+        if (parkingData) {
+          totalCost.value = parkingData.total_cost || 0
+          totalRecords.value = parkingData.record_count || 0
+          
+          if (Array.isArray(parkingData.records)) {
+            chargingRecords.value = parkingData.records.map((record: any) => {
+              // 時間格式處理，只取時間前面的部分顯示或保留完整
+              // 範例資料: "2025/11/30 12:30:00"
+              return {
+                id: record.record_id,
+                stationId: parkingData.parking_space,
+                startTime: record.start_time,
+                endTime: record.end_time,
+                cost: record.price,
+                energy: record.charging_kwh,
+                type: 'charge' // 目前 API 回傳似乎只有充電紀錄
+              }
+            })
+          } else {
+            chargingRecords.value = []
+          }
+        } else {
+          // 該車位無資料
+          totalCost.value = 0
+          totalRecords.value = 0
+          chargingRecords.value = []
+        }
+      }
+    }
+
+  } catch (error) {
+    console.error('Failed to load history:', error)
+  } finally {
+    loading.value = false
+  }
+}
 
 // 監聽預設區間變化
 watch(selectedDateRange, (newRange) => {
@@ -178,51 +275,20 @@ watch([startDate, endDate], ([newStart, newEnd]) => {
       startDate.value = newEnd
     }
   }
+  // 當日期改變時重新載入資料
+  loadData()
 })
 
-const parkingOptions = [
-  { value: 'B2-56', label: 'B2-56' },
-  { value: 'B2-57', label: 'B2-57' },
-  { value: 'B2-58', label: 'B2-58' }
-]
+// 監聽車位改變
+watch(selectedParking, () => {
+  loadData()
+})
 
-const dateOptions = [
-  { value: 'month1', label: '近一個月' },
-  { value: 'month3', label: '近三個月' },
-  { value: 'halfYear', label: '近半年' },
-]
+onMounted(() => {
+  loadData()
+})
 
-const chargingRecords = ref([
-  {
-    id: 1,
-    stationId: 'WS-01-12',
-    startTime: '2025/11/30 12:30:00',
-    endTime: '2025/11/30 18:30:00',
-    cost: -300,
-    energy: 50,
-    type: 'charge'
-  },
-  {
-    id: 2,
-    stationId: 'WS-01-12',
-    startTime: '2025/11/30 12:30:00',
-    endTime: '2025/11/30 18:30:00',
-    cost: 300,
-    energy: 50,
-    type: 'add'
-  },
-  {
-    id: 3,
-    stationId: 'WS-01-12',
-    startTime: '2025/11/30 12:30:00',
-    endTime: '2025/11/30 18:30:00',
-    cost: -600,
-    energy: 50,
-    type: 'charge'
-  }
-])
 const goToDetail = (id: number) => {
-
   router.push(`/charging-history/${id}`)
 }
 </script>

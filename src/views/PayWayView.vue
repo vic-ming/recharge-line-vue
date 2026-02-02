@@ -229,7 +229,7 @@ const handleSubmit = () => {
 
 // 處理 Alert 確認按鈕
 const handleAlertConfirm = () => {
-  router.push('/invoice')
+  router.push('/balance')
 }
 </script>
 

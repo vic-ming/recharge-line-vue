@@ -75,7 +75,43 @@ export interface ChargingRecordDetailRequest {
     record_id: number
 }
 
+// ==================== 支付 API 定義 ====================
+
+/** 建立支付 Token 請求參數 */
+export interface CreatePaymentTokenRequest {
+    total_amount: number
+    member_id: string
+    phone: string
+    invoice_carrier_type: number
+    invoice_carrier_num?: string
+    invoice_buyer_name?: string
+    invoice_tax_id?: string
+}
+
+/** 建立支付 Token 回應 */
+export interface CreatePaymentTokenResponse {
+    merchant_trade_no: string
+    token: string
+    token_expire_date: string
+    invoice_id?: number
+}
+
+/** 執行支付請求參數 */
+export interface ExecutePaymentRequest {
+    pay_token: string
+    merchant_trade_no: string
+    phone: string
+}
+
+
+/** 支付 API 通用回應格式 */
+export interface PaymentApiResponse<T> {
+    success: boolean
+    data: T
+}
+
 // ==================== API 方法 ====================
+
 
 /**
  * 註冊會員
@@ -213,4 +249,36 @@ export async function getChargingRecordDetail(record_id: number) {
         line_uid,
         record_id
     })
+}
+
+const PAYMENT_API_URL = import.meta.env.VITE_PAYMENT_API_URL
+
+/**
+ * 建立支付 Token
+ * @param data 建立 Token 資料
+ */
+export async function createPaymentToken(data: CreatePaymentTokenRequest) {
+    if (!PAYMENT_API_URL) {
+        throw new Error('VITE_PAYMENT_API_URL is not defined')
+    }
+
+    // 使用絕對 URL
+    const url = `${PAYMENT_API_URL}/api/ecpay/payment/create-token`
+
+    return apiPost<any>(url, data) as unknown as Promise<PaymentApiResponse<CreatePaymentTokenResponse>>
+}
+
+/**
+ * 執行支付
+ * @param data 支付資料
+ */
+export async function executePayment(data: ExecutePaymentRequest) {
+    if (!PAYMENT_API_URL) {
+        throw new Error('VITE_PAYMENT_API_URL is not defined')
+    }
+
+    // 使用絕對 URL
+    const url = `${PAYMENT_API_URL}/api/ecpay/payment/execute`
+
+    return apiPost(url, data)
 }

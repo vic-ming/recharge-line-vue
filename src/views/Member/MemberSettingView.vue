@@ -1,6 +1,7 @@
 <template>
   <MainLayout header="編輯會員資料" :deleteIcon="false" :backIcon="true">
-    <div class="setting-container">
+    <Loading v-if="loading" />
+    <div v-else class="setting-container">
       <div class="form-step">
         <!-- 真實姓名 -->
         <div class="form-group">
@@ -99,7 +100,7 @@
       </div>
     </div>
     <!-- Navigation Buttons -->
-    <div class="button-container">
+    <div v-if="!loading" class="button-container">
       <!-- 儲存變更按鈕 -->
       <button
         @click="handleSubmit" 
@@ -122,20 +123,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import MainLayout from '@/components/MainLayout.vue'
 import BottomAlert from '@/components/BottomAlert.vue'
+import Loading from '@/components/Loading.vue'
+import { getMemberProfile, updateMemberProfile } from '@/services/api.service'
 
 const router = useRouter()
 const showAlert = ref(false)
+const loading = ref(false)
 
 const formData = reactive({
-  name: '王大明',
-  phone: '0800000123',
-  email: 'abc123@gmail.com',
-  homeNumber: 'WS-01-12',
-  parkingSpots: ['B2-56', 'B2-57']
+  name: '',
+  phone: '',
+  email: '',
+  homeNumber: '',
+  parkingSpots: ['']
 })
 
 const errors = reactive({
@@ -143,6 +147,38 @@ const errors = reactive({
   phone: '',
   email: '',
   homeNumber: ''
+})
+
+// 載入會員資料
+const loadMemberProfile = async () => {
+  loading.value = true
+  try {
+    const res = await getMemberProfile()
+    if (res && res.user_profile) {
+      const userProfile = res.user_profile
+      
+      // API 目前回傳結構無 name，若需編輯姓名可能需要 API 支援或從其他地方獲取
+      // 這裡暫時保持空字串或預設值
+      formData.name = '' 
+      formData.phone = userProfile.phone || ''
+      formData.email = userProfile.email || ''
+      formData.homeNumber = userProfile.household_number || ''
+      
+      if (userProfile.parking_spaces && Array.isArray(userProfile.parking_spaces)) {
+        formData.parkingSpots = userProfile.parking_spaces.length > 0 ? userProfile.parking_spaces : ['']
+      } else {
+        formData.parkingSpots = ['']
+      }
+    }
+  } catch (error) {
+    console.error('Failed to load member profile:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  loadMemberProfile()
 })
 
 // 驗證規則
@@ -173,6 +209,7 @@ const validators = {
 // 驗證單個欄位
 const validateField = (field: keyof typeof errors) => {
   if (validators[field]) {
+    // @ts-ignore - dynamic key access
     errors[field] = validators[field](formData[field])
   }
 }
@@ -204,7 +241,7 @@ const isFormValid = computed(() => {
 })
 
 // 處理提交
-const handleSubmit = () => {
+const handleSubmit = async () => {
   // 驗證所有欄位
   validateField('name')
   validateField('phone')
@@ -212,9 +249,28 @@ const handleSubmit = () => {
   validateField('homeNumber')
   
   if (isFormValid.value) {
-    console.log('Updated member data:', formData)
-    // 顯示成功提示
-    showAlert.value = true
+    loading.value = true
+    try {
+      const res = await updateMemberProfile({
+        name: formData.name,
+        phone: formData.phone,
+        email: formData.email,
+        household_number: formData.homeNumber,
+        parking_spaces: formData.parkingSpots
+      })
+
+      if (res && res.success) {
+        // 顯示成功提示
+        showAlert.value = true
+      } else {
+        alert(res?.Message || '更新失敗')
+      }
+    } catch (error) {
+      console.error('Update failed:', error)
+      alert('更新失敗，請稍後再試')
+    } finally {
+      loading.value = false
+    }
   }
 }
 

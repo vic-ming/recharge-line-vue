@@ -36,7 +36,7 @@
 import { ref, computed } from 'vue'
 
 interface Option {
-  value: string
+  value: string | number
   label: string
 }
 

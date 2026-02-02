@@ -1,10 +1,13 @@
 <template>
   <MainLayout header="充電金餘額" :deleteIcon="true" :backIcon="false">
-    <div class="balance-container">
+    <Loading v-if="loading" />
+    <div v-else class="balance-container">
       <!-- 圓形餘額顯示 -->
       <div class="balance-wheel">
         <div class="balance-label">目前餘額</div>
-        <div class="balance-amount">${{ balance.toLocaleString() }}</div>
+        <div v-if="loading" class="balance-amount">$ 0</div>
+        <div v-else-if="error" class="balance-amount error">--</div>
+        <div v-else class="balance-amount">${{ balance.toLocaleString() }}</div>
       </div>
 
       <!-- 立即儲值按鈕 -->
@@ -17,7 +20,7 @@
         <h3 class="section-title">{{ hasRecords ? '儲值紀錄' : '使用紀錄' }}</h3>
         
         <div v-if="hasRecords" class="records-list">
-          <div v-for="record in records" :key="record.id" class="record-item">
+          <div v-for="record in recentRecords" :key="record.id" class="record-item">
             <div class="record-icon">
               <img :src="record.type === 'deposit' ? '/icons/recharge.svg' : '/icons/recharge-white.svg'" :alt="record.type">
             </div>
@@ -44,41 +47,98 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import MainLayout from '@/components/MainLayout.vue'
+import Loading from '@/components/Loading.vue'
+import { getBalance } from '@/services/api.service'
 
 const router = useRouter()
 
-const balance = ref(5000)
-const records = ref([
-  {
-    id: 1,
-    type: 'deposit',
-    typeText: '儲值',
-    date: '2025/12/01',
-    detail: '信用卡',
-    amount: 1000
-  },
-  {
-    id: 2,
-    type: 'charge',
-    typeText: '充電',
-    date: '2025/12/01',
-    detail: '450kWh',
-    amount: 1000
-  },
-  {
-    id: 3,
-    type: 'charge',
-    typeText: '充電',
-    date: '2025/12/01',
-    detail: '450kWh',
-    amount: 1000
-  }
-])
+const balance = ref(0)
+const loading = ref(true)
+const error = ref('')
+
+// 交易紀錄介面
+interface Record {
+  id: number
+  type: 'deposit' | 'charge'
+  typeText: string
+  date: string
+  detail: string
+  amount: number
+}
+
+const records = ref<Record[]>([])
+
+const recentRecords = computed(() => records.value.slice(0, 3))
 
 const hasRecords = computed(() => records.value.length > 0)
+
+// 載入餘額資料
+const loadBalance = async () => {
+  loading.value = true
+  error.value = ''
+  
+  try {
+    const response = await getBalance()
+    
+    console.log('Balance API Response:', response)
+    
+    // 檢查回應格式
+    let data: any
+    
+    // 情況1: 後端直接回傳 { success, balance, records }
+    if (response.success !== undefined) {
+      data = response
+    }
+    // 情況2: 標準格式 { Code, Data: { success, balance, records } }
+    else if (response.Code === 0 || response.Code === 1) {
+      data = response.Data
+    }
+    // 情況3: 錯誤
+    else {
+      error.value = response.Message || '載入失敗'
+      console.error('載入餘額失敗:', response.Message)
+      return
+    }
+    
+    // 檢查 success 標記
+    if (data.success) {
+      // 設定餘額
+      balance.value = data.balance || 0
+      
+      // 轉換交易紀錄格式
+      if (data.records && Array.isArray(data.records)) {
+        records.value = data.records.map((record: any, index: number) => {
+          // 判斷類型（儲值或充電）
+          const isDeposit = record.category === '儲值' || record.amount.startsWith('+')
+          
+          return {
+            id: index + 1,
+            type: isDeposit ? 'deposit' : 'charge',
+            typeText: record.category,
+            date: record.time,
+            detail: record.type,
+            amount: Math.abs(parseFloat(record.amount.replace(/[+-]/g, '')))
+          }
+        })
+      }
+    } else {
+      error.value = '載入失敗'
+    }
+  } catch (err) {
+    error.value = '網路錯誤，請稍後再試'
+    console.error('載入餘額失敗:', err)
+  } finally {
+    loading.value = false
+  }
+}
+
+// 組件掛載時載入資料
+onMounted(() => {
+  loadBalance()
+})
 
 const goToDeposit = () => {
   router.push('/deposit')
@@ -115,6 +175,17 @@ const goToDeposit = () => {
   .balance-amount {
     font-size: 60px;
     line-height: 48px;
+
+    &.loading {
+      font-size: 24px;
+      color: #A7B5C9;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    &.error {
+      color: #FF6B6B;
+      opacity: 0.5;
+    }
   }
 
   .balance-note {
@@ -128,6 +199,45 @@ const goToDeposit = () => {
   }
 }
 
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.error-message {
+  background: rgba(255, 107, 107, 0.1);
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  color: #FF6B6B;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  .retry-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: #60F7D1;
+    border: 1px solid #60F7D1;
+    border-radius: 8px;
+    padding: 6px 16px;
+    font-size: 14px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background: rgba(96, 247, 209, 0.1);
+    }
+  }
+}
+
 .deposit-btn {
   width: 147px;
   height: 51px;
@@ -138,6 +248,13 @@ const goToDeposit = () => {
   font-size: 16px;
   font-weight: 400;
   margin-bottom: 40px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 }
 
 .records-section {

@@ -13,5 +13,15 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
+  },
+  server: {
+    proxy: {
+      '/v1': {
+        target: 'https://aoao.synology.me',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path
+      }
+    }
   }
 })

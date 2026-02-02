@@ -1,6 +1,7 @@
 <template>
-  <MainLayout header="" :deleteIcon="true" :backIcon="false" :questionIcon="false">
-    <div class="charging-container">
+  <MainLayout header="" :deleteIcon="true" :backIcon="false">
+    <Loading v-if="loading" />
+    <div v-else class="charging-container">
       <!-- 車位選擇器 -->
       <div class="parking-selector">
         <img src="/icons/car.svg" alt="車位" class="car-icon">
@@ -15,17 +16,15 @@
       <div class="status-buttons">
         <button 
           class="status-btn charging"
-          :class="{ active: chargingStatus === 'charging' }"
         >
-          <img src="/icons/bolt.svg" alt="充電中">
-          <span>充電中</span>
+          <img v-if="isCharging" src="/icons/bolt.svg" alt="充電中">
+          <span>{{ statusText }}</span>
         </button>
         <button 
           class="status-btn peak"
-          :class="{ active: chargingStatus === 'peak' }"
         >
-          <img src="/icons/bolt.svg" alt="尖峰">
-          <span>尖峰</span>
+          <img v-if="isPeak" src="/icons/bolt.svg" alt="尖峰">
+          <span>{{ touText }}</span>
         </button>
       </div>
 
@@ -57,20 +56,120 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import MainLayout from '@/components/MainLayout.vue'
 import CustomSelect from '@/components/CustomSelect.vue'
+import Loading from '@/components/Loading.vue'
+import { getMemberProfile, getChargingStatus } from '@/services/api.service'
 
-const selectedParking = ref('B2-56')
-const chargingStatus = ref('charging') // 'charging' or 'peak'
-const power = ref(7)
-const cost = ref(12)
+const selectedParking = ref('')
+// 資料狀態
+const isCharging = ref(false)
+const isPeak = ref(false)
+const statusText = ref('待機中')
+const touText = ref('離峰')
+const power = ref(0)
+const cost = ref(0)
+const parkingOptions = ref<{ value: string, label: string }[]>([])
+const statusMap = ref<Record<string, any>>({})
+const loading = ref(false)
 
-const parkingOptions = [
-  { value: 'B2-56', label: 'B2-56' },
-  { value: 'B2-57', label: 'B2-57' },
-  { value: 'B2-58', label: 'B2-58' }
-]
+// 載入資料
+const loadData = async () => {
+  loading.value = true
+  try {
+    // 1. 先取得車位列表
+    const profileRes = await getMemberProfile()
+    if (profileRes && profileRes.user_profile) {
+      const spaces = profileRes.user_profile.parking_spaces
+      if (Array.isArray(spaces) && spaces.length > 0) {
+        parkingOptions.value = spaces.map((space: string) => ({
+          value: space,
+          label: space
+        }))
+        // 預設選取第一個
+        if (!selectedParking.value) {
+          selectedParking.value = spaces[0]
+        }
+      }
+    }
+
+    // 2. 取得充電狀態
+    const statusRes = await getChargingStatus()
+    
+    // statusRes 是一個陣列
+    if (Array.isArray(statusRes.chargers)) {
+      statusMap.value = statusRes.chargers.reduce((acc: any, item: any) => {
+        acc[item.parking_space] = item
+        return acc
+      }, {})
+      
+      // 如果已經有選中的車位，立即更新資訊
+      if (selectedParking.value) {
+        updateDisplayInfo(selectedParking.value)
+      }
+    }
+
+  } catch (error) {
+    console.error('Failed to load charging status:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+// 更新顯示資訊
+const updateDisplayInfo = (parkingSpace: string) => {
+  console.log('Updating display info for parking space:', parkingSpace)
+  console.log('Display info for parking space:', statusMap.value)
+  if (!parkingSpace || !statusMap.value[parkingSpace]) {
+    // 無資料時的預設值
+    isCharging.value = false
+    isPeak.value = false
+    statusText.value = '待機中'
+    touText.value = '離峰'
+    power.value = 0
+    cost.value = 0
+    return
+  }
+  
+  const data = statusMap.value[parkingSpace]
+  
+  // 1. 設定充電狀態 (charging, idle, finished)
+  // 如果是 charging 則左邊亮起
+  isCharging.value = data.charging_status === 'charging'
+  
+  // 設定狀態文字
+  const statusLabels: Record<string, string> = {
+    'charging': '充電中',
+    'idle': '待機中',
+    'finished': '已完成'
+  }
+  statusText.value = statusLabels[data.charging_status] || '待機中'
+
+  // 2. 設定尖離峰狀態 (peak, off-peak)
+  // 如果是 peak 則右邊亮起
+  isPeak.value = data.tou_period === 'peak'
+  
+  // 設定時段文字
+  const touLabels: Record<string, string> = {
+    'peak': '尖峰',
+    'off-peak': '離峰'
+  }
+  touText.value = touLabels[data.tou_period] || '離峰'
+
+  // 3. 設定數值
+  power.value = data.power_kw || 0
+  cost.value = data.cost_per_kwh || 0
+}
+
+// 監聽車位變更
+watch(selectedParking, (newVal) => {
+  updateDisplayInfo(newVal)
+})
+
+onMounted(() => {
+  loadData()
+})
 </script>
 
 <style lang="scss" scoped>

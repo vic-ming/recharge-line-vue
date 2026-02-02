@@ -65,7 +65,7 @@
             placeholder="請輸入你的用戶驗證碼"
             @blur="validateField('verificationCode')"
             :class="{ 'error': errors.verificationCode }"
-            maxlength="8"
+            maxlength="5"
           />
           <span v-if="errors.verificationCode" class="error-message">{{ errors.verificationCode }}</span>
         </div>
@@ -195,11 +195,11 @@ const handleResend = async () => {
   try {
     const response = await resendPhoneCode()
     
-    if (response.Code === 0 || response.Code === 1) {
+    if (response && response.success) {
       alert('驗證碼已重新發送')
       startCountDown()
     } else {
-      alert(response.Message || '發送失敗，請稍後再試')
+      alert(response?.Message || '發送失敗，請稍後再試')
     }
   } catch (error) {
     console.error('重新發送驗證碼失敗:', error)
@@ -244,7 +244,7 @@ const validators = {
   },
   verificationCode: (value: string) => {
     if (!value.trim()) return '請輸入用戶驗證碼'
-    if (value.length !== 8) return '驗證碼必須為8碼'
+    if (value.length !== 5) return '驗證碼必須為5碼'
     return ''
   },
   phoneVerificationCode: (value: string) => {
@@ -307,7 +307,7 @@ const handleNextStep = async () => {
       valicode: formData.verificationCode
     })
 
-    if (response.Code === 0 || response.Code === 1) {
+    if (response && response.success) {
       // 註冊成功，進入驗證手機步驟
       currentStep.value++
       // 進入驗證手機步驟時開始倒數
@@ -316,7 +316,7 @@ const handleNextStep = async () => {
       }
     } else {
       // 顯示錯誤訊息
-      alert(response.Message || '註冊失敗，請稍後再試')
+      alert(response?.Message || '註冊失敗，請稍後再試')
     }
   } catch (error) {
     console.error('註冊失敗:', error)
@@ -336,12 +336,12 @@ const handleSubmit = async () => {
   try {
     const response = await verifyPhoneCode(formData.phoneVerificationCode)
 
-    if (response.Code === 0 || response.Code === 1) {
+    if (response && response.success) {
       // 驗證成功，進入完成步驟
       currentStep.value++
     } else {
       // 顯示錯誤訊息
-      alert(response.Message || '驗證失敗，請檢查驗證碼是否正確')
+      alert(response?.Message || '驗證失敗，請檢查驗證碼是否正確')
     }
   } catch (error) {
     console.error('驗證失敗:', error)

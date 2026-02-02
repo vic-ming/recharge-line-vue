@@ -1,6 +1,7 @@
 <template>
   <MainLayout header="充電紀錄明細" :deleteIcon="false" :backIcon="true">
-    <div class="detail-container">
+    <Loading v-if="loading" />
+    <div v-else class="detail-container">
       <!-- 車輛圖片 -->
       <div class="car-image">
         <img src="/images/detail-banner.png" alt="充電車輛">
@@ -48,17 +49,62 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import MainLayout from '@/components/MainLayout.vue'
+import Loading from '@/components/Loading.vue'
+import { getChargingRecordDetail } from '@/services/api.service'
 
-// 模擬數據
-const chargingDate = ref('2026/11/30')
-const energy = ref(50)
-const totalCost = ref(300)
-const peakRate = ref(12.5)
-const peakAmount = ref(250)
-const offPeakRate = ref(6.5)
-const offPeakAmount = ref(50)
+const route = useRoute()
+const loading = ref(false)
+
+const chargingDate = ref('--')
+const energy = ref(0)
+const totalCost = ref(0)
+const peakRate = ref(0)
+const peakAmount = ref(0)
+const offPeakRate = ref(0)
+const offPeakAmount = ref(0)
+
+const loadDetail = async () => {
+  const id = Number(route.params.id)
+  if (!id) return
+
+  loading.value = true
+  try {
+    const res = await getChargingRecordDetail(id)
+    console.log('Record Detail:', res)
+
+    if (res && res.success) {
+      chargingDate.value = res.date || '--'
+      energy.value = res.charging_kwh || 0
+      totalCost.value = res.total_cost || 0
+      
+      // 處理尖離峰費率詳情
+      if (res.tou_period_detail) {
+        // 尖峰
+        if (res.tou_period_detail.peak) {
+          peakRate.value = res.tou_period_detail.peak.unit_price || 0
+          peakAmount.value = res.tou_period_detail.peak.price || 0
+        }
+        
+        // 離峰
+        if (res.tou_period_detail.off_peak) {
+          offPeakRate.value = res.tou_period_detail.off_peak.unit_price || 0
+          offPeakAmount.value = res.tou_period_detail.off_peak.price || 0
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Failed to load record detail:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  loadDetail()
+})
 </script>
 
 <style lang="scss" scoped>

@@ -1,5 +1,27 @@
 <script setup lang="ts">
-// Basic layout component
+import { onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { getMemberProfile } from '@/services/api.service'
+
+const router = useRouter()
+const route = useRoute()
+
+onMounted(async () => {
+  try {
+    const res = await getMemberProfile()
+    if (res && res.success === false && res.message === '查無此會員資料') {
+       console.log('User not found, redirecting to register')
+       if (route.name !== 'register') {
+         router.push({ name: 'register' })
+       }
+    }
+  } catch (error) {
+    console.error('Failed to get member profile on app launch:', error)
+    if (router.currentRoute.value.name !== 'register') {
+      router.push({ name: 'register' })
+    }
+  }
+})
 </script>
 
 <template>

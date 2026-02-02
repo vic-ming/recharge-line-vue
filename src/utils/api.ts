@@ -16,9 +16,11 @@ interface ApiOptions {
 
 // API 回應介面
 interface ApiResponse<T = any> {
-    Code: number
-    Message: string
-    Data: T
+    Code?: number
+    Message?: string
+    Data?: T
+    // 支援直接回傳的格式（不包裝在 Data 中）
+    [key: string]: any
 }
 
 /**
@@ -28,15 +30,35 @@ interface ApiResponse<T = any> {
  * @returns 完整的 URL
  */
 function buildUrl(endpoint: string, params?: Record<string, string | number | boolean>): string {
-    const url = new URL(endpoint, API_URL)
-
-    if (params) {
-        Object.entries(params).forEach(([key, value]) => {
-            url.searchParams.append(key, String(value))
-        })
+    // 檢查 endpoint 是否已經是絕對路徑
+    if (endpoint.startsWith('http://') || endpoint.startsWith('https://')) {
+        return endpoint
     }
 
-    return url.toString()
+    // 檢查 API_URL 是否為相對路徑（用於開發環境代理）
+    const isRelativePath = API_URL.startsWith('/')
+
+    let url: string
+
+    if (isRelativePath) {
+        // 相對路徑：直接拼接
+        url = `${API_URL}${endpoint}`
+    } else {
+        // 絕對路徑：使用 URL 構造器
+        const urlObj = new URL(endpoint, API_URL)
+        url = urlObj.toString()
+    }
+
+    // 添加查詢參數
+    if (params && Object.keys(params).length > 0) {
+        const searchParams = new URLSearchParams()
+        Object.entries(params).forEach(([key, value]) => {
+            searchParams.append(key, String(value))
+        })
+        url += (url.includes('?') ? '&' : '?') + searchParams.toString()
+    }
+
+    return url
 }
 
 /**

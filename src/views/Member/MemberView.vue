@@ -1,6 +1,7 @@
 <template>
   <MainLayout header="會員中心" :deleteIcon="true" :backIcon="false">
-    <div class="member-container">
+    <Loading v-if="loading" />
+    <div v-else class="member-container">
       <div class="member-card">
         <img class="card-bg" src="/images/card-bg.png" alt="" />
         <img class="edit-icon" src="/icons/edit.svg" alt="" @click="edit" />
@@ -28,7 +29,7 @@
 
       
     </div>
-    <div class="contact-info">
+    <div v-if="!loading" class="contact-info">
         <div class="contact-title">客服聯絡資訊</div>
         <div class="contact-item">
           <img src="/icons/phone-gray.svg" alt="" />
@@ -39,19 +40,63 @@
 </template>
 
 <script setup lang="ts">
-import MainLayout from '@/components/MainLayout.vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-const router = useRouter()
+import MainLayout from '@/components/MainLayout.vue'
+import Loading from '@/components/Loading.vue'
+import { getMemberProfile } from '@/services/api.service'
+
+const router = useRouter() // router instance
+
 const edit = () => {
   router.push('/member/setting')
 }
-const info = {
-  name: '王大明',
-  phone: '0800000123',
-  mail: 'abc123@gmail.com',
-  home: 'WS-01-12',
-  car: ['B2-56', 'B2-57', 'B2-58']
+
+interface MemberInfo {
+  name: string
+  phone: string
+  mail: string
+  home: string
+  car: string[]
 }
+
+const info = ref<MemberInfo>({
+  name: '--',
+  phone: '--',
+  mail: '--',
+  home: '--',
+  car: []
+})
+
+const loading = ref(false)
+
+const fetchMemberProfile = async () => {
+  loading.value = true
+  try {
+    const res = await getMemberProfile()
+    // 檢查 API 回傳結構
+    if (res && res.user_profile) {
+        const userProfile = res.user_profile
+        // API 目前沒有回傳 name 欄位，先使用預設值或從其他地方獲取（如果有的話）
+        // 暫時顯示 phone 作為名稱，或待 API 補充
+        info.value = {
+            name: '--', 
+            phone: userProfile.phone || '--',
+            mail: userProfile.email || '--',
+            home: userProfile.household_number || '--',
+            car: userProfile.parking_spaces || []
+        }
+    }
+  } catch (error) {
+    console.error('Failed to fetch member profile:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  fetchMemberProfile()
+})
 </script>
 
 <style lang="scss" scoped>
