@@ -41,7 +41,7 @@ interface Option {
 }
 
 const props = defineProps<{
-  modelValue: string
+  modelValue: string | number | null
   options: Option[]
   placeholder?: string
   hasError?: boolean
