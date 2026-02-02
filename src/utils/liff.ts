@@ -18,23 +18,34 @@ let liffInitPromise: Promise<void> | null = null
 export async function initializeLiff(): Promise<void> {
     // 如果已經初始化，直接返回
     if (isLiffInitialized) {
+        // alert('LIFF already initialized')
         return Promise.resolve()
     }
 
     // 如果正在初始化，返回現有的 Promise
     if (liffInitPromise) {
+        // alert('LIFF init already in progress')
         return liffInitPromise
     }
 
+    // 檢查 ID
+    if (!LIFF_ID) {
+        alert('錯誤: LIFF_ID 未設定')
+        return Promise.reject(new Error('LIFF_ID is missing'))
+    }
+
     // 開始初始化
+    // alert('開始執行 liff.init: ' + LIFF_ID)
     liffInitPromise = liff
         .init({ liffId: LIFF_ID })
         .then(() => {
             isLiffInitialized = true
             console.log('LIFF initialized successfully')
+            // alert('liff.init 完成')
         })
         .catch((error) => {
             console.error('LIFF initialization failed:', error)
+            alert('liff.init 失敗: ' + error)
             liffInitPromise = null
             throw error
         })
