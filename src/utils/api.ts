@@ -93,7 +93,7 @@ export async function apiRequest<T = any>(
         method,
         headers: {
             'Content-Type': 'application/json',
-            ...(lineUid ? { 'X-Line-UID': lineUid } : {}),
+            // ...(lineUid ? { 'X-Line-UID': lineUid } : {}), // CORS 不支援此 header，改為 body 傳送
             ...headers
         }
     }
@@ -108,7 +108,6 @@ export async function apiRequest<T = any>(
 
         // 檢查 HTTP 狀態碼
         if (!response.ok) {
-            alert(`HTTP Error: ${response.status} ${response.statusText}`)
             throw new Error(`HTTP Error: ${response.status} ${response.statusText}`)
         }
 
@@ -122,7 +121,6 @@ export async function apiRequest<T = any>(
 
         return data
     } catch (error) {
-        alert('API Request Failed:' + error)
         console.error('API Request Failed:', error)
         throw error
     }
