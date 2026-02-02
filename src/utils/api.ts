@@ -35,7 +35,6 @@ function buildUrl(endpoint: string, params?: Record<string, string | number | bo
         return endpoint
     }
 
-
     // 檢查 API_URL 是否為相對路徑（用於開發環境代理）
     const isRelativePath = API_URL.startsWith('/')
     let url: string
@@ -48,6 +47,7 @@ function buildUrl(endpoint: string, params?: Record<string, string | number | bo
         const urlObj = new URL(endpoint, API_URL)
         url = urlObj.toString()
     }
+    alert(url)
 
     // 添加查詢參數
     if (params && Object.keys(params).length > 0) {
