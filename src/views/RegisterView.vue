@@ -83,7 +83,6 @@
             placeholder="請輸入你的手機驗證碼"
             @blur="validateField('phoneVerificationCode')"
             :class="{ 'error': errors.phoneVerificationCode }"
-            maxlength="6"
           />
           <span v-if="errors.phoneVerificationCode" class="error-message">{{ errors.phoneVerificationCode }}</span>
         </div>
@@ -196,14 +195,14 @@ const handleResend = async () => {
     const response = await resendPhoneCode()
     
     if (response && response.success) {
-      alert('驗證碼已重新發送')
+      // alert('驗證碼已重新發送')
       startCountDown()
     } else {
-      alert(response?.Message || '發送失敗，請稍後再試')
+      // alert(response?.Message || '發送失敗，請稍後再試')
     }
   } catch (error) {
     console.error('重新發送驗證碼失敗:', error)
-    alert('發送失敗，請稍後再試')
+    // alert('發送失敗，請稍後再試')
   } finally {
     loading.value = false
   }
@@ -249,7 +248,6 @@ const validators = {
   },
   phoneVerificationCode: (value: string) => {
     if (!value.trim()) return '請輸入手機驗證碼'
-    if (value.length !== 6) return '驗證碼必須為6位數字'
     if (!/^\d+$/.test(value)) return '驗證碼只能包含數字'
     return ''
   }
