@@ -82,6 +82,7 @@ export interface CreatePaymentTokenRequest {
     total_amount: number
     member_id: string
     phone: string
+    email: string
     invoice_carrier_type: number
     invoice_carrier_num?: string
     invoice_buyer_name?: string

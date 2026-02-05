@@ -250,6 +250,7 @@ const handleDeposit = async () => {
       }
       
       const phone = memberProfile?.user_profile?.phone
+      const email = memberProfile?.user_profile?.email
       
       if (!phone) {
         alert('無法取得會員電話號碼')
@@ -263,6 +264,7 @@ const handleDeposit = async () => {
             total_amount: selectedAmount.value!,
             member_id: lineUid,
             phone: phone,
+            email: email,
             invoice_carrier_type: selectedInvoiceType.value!, 
             invoice_carrier_num: selectedInvoiceType.value === 2 ? formData.mobileCarrier : '',
             invoice_buyer_name: selectedInvoiceType.value === 3 ? formData.companyName : '',
