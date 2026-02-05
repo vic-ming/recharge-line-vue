@@ -241,7 +241,14 @@ const handleDeposit = async () => {
       }
 
       // 1. 取得會員資料 (為了拿手機號碼)
-      const memberProfile = await getMemberProfile() as any
+      let memberProfile: any
+      try {
+        memberProfile = await getMemberProfile() as any
+      } catch (e) {
+         alert('取得會員資料失敗: ' + (e instanceof Error ? e.message : e))
+         throw e
+      }
+      
       const phone = memberProfile?.user_profile?.phone
       
       if (!phone) {
@@ -250,15 +257,21 @@ const handleDeposit = async () => {
       }
 
       // 2. 建立支付 Token
-      const tokenRes = await createPaymentToken({
-        total_amount: selectedAmount.value!,
-        member_id: lineUid,
-        phone: phone,
-        invoice_carrier_type: selectedInvoiceType.value!, 
-        invoice_carrier_num: selectedInvoiceType.value === 2 ? formData.mobileCarrier : '',
-        invoice_buyer_name: selectedInvoiceType.value === 3 ? formData.companyName : '',
-        invoice_tax_id: selectedInvoiceType.value === 3 ? formData.taxId : '',
-      })
+      let tokenRes
+      try {
+        tokenRes = await createPaymentToken({
+            total_amount: selectedAmount.value!,
+            member_id: lineUid,
+            phone: phone,
+            invoice_carrier_type: selectedInvoiceType.value!, 
+            invoice_carrier_num: selectedInvoiceType.value === 2 ? formData.mobileCarrier : '',
+            invoice_buyer_name: selectedInvoiceType.value === 3 ? formData.companyName : '',
+            invoice_tax_id: selectedInvoiceType.value === 3 ? formData.taxId : '',
+        })
+      } catch (e) {
+        alert('建立支付 Token 失敗: ' + (e instanceof Error ? e.message : e))
+        throw e
+      }
 
       if (!tokenRes?.data?.token) {
         alert('建立支付訂單失敗')
