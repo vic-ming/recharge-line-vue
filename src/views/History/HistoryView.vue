@@ -260,21 +260,43 @@ watch(selectedDateRange, (newRange) => {
 })
 
 // 監聽日期手動變化
-watch([startDate, endDate], ([newStart, newEnd]) => {
-  if (!isInternalChange) {
-    selectedDateRange.value = 'custom'
-    
-    // 限制日期範圍在半年內
-    if (newStart < minDate.value) {
-      startDate.value = minDate.value
-    }
-    if (newEnd > maxDate.value) {
-      endDate.value = maxDate.value
-    }
+watch([startDate, endDate], ([newStart, newEnd], [oldStart, oldEnd]) => {
+  if (isInternalChange) {
+    loadData()
+    return
+  }
+
+  selectedDateRange.value = 'custom'
+  
+  // 限制日期範圍在半年內
+  if (newStart < minDate.value) {
+    startDate.value = minDate.value
+    return
+  }
+  if (newEnd > maxDate.value) {
+    endDate.value = maxDate.value
+    return
+  }
+
+  // 智能連動邏輯
+  // 需確保 oldStart, oldEnd 存在 (第一次執行時可能為 undefined，但非 immediate watch 通常沒問題)
+  const prevStart = oldStart || ''
+  const prevEnd = oldEnd || ''
+
+  if (newStart !== prevStart) {
+    // 開始日期變動：如果開始時間晚於結束時間，自動推延結束時間
     if (newStart > newEnd) {
+      endDate.value = newStart
+      return
+    }
+  } else if (newEnd !== prevEnd) {
+    // 結束日期變動：如果結束時間早於開始時間，自動提早開始時間
+    if (newEnd < newStart) {
       startDate.value = newEnd
+      return
     }
   }
+
   // 當日期改變時重新載入資料
   loadData()
 })

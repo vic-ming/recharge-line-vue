@@ -126,6 +126,15 @@
       </div>
     </div>
     <div id="ECPayPayment" class="ecpay-payment"></div>
+
+
+    <BottomAlert 
+      v-model="showSuccessAlert"
+      icon="/icons/success.svg"
+      title="儲值成功！"
+      button-text="確定"
+      @button-click="handleAlertConfirm"
+    />
   </MainLayout>
 </template>
 
@@ -134,12 +143,14 @@ import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import MainLayout from '@/components/MainLayout.vue'
 import CustomSelect from '@/components/CustomSelect.vue'
+import BottomAlert from '@/components/BottomAlert.vue'
 import { createPaymentToken, getMemberProfile, executePayment } from '@/services/api.service'
 import { loadECPaySDK } from '@/utils/ecpay'
 import { getLineUserId } from '@/utils/liff'
 
 const router = useRouter()
 const isECPayReady = ref(false)
+const showSuccessAlert = ref(false)
 
 const amountPresets = [1000, 2000, 3000, 5000, 7000, 10000]
 const selectedAmount = ref<number | null>(null)
@@ -257,7 +268,6 @@ const handleDeposit = async () => {
       // 3. 載入並呼叫 SDK
       await loadECPaySDK('stage') // 預設使用 stage，實際專案可依環境變數調整
       
-
       
       if (window.ECPay) {
         // 1. 初始化 ECPay SDK
@@ -333,11 +343,18 @@ const handleApprovePayment = async () => {
                     phone: phone
                 })
 
-                if (res.Code === 1) { // 假設 Code 1 為成功
-                   alert('付款成功')
-                   router.push('/balance')
+                if (res.success) { // 假設 Code 1 為成功
+                   // check 3D verification
+                   if (res.data?.ThreeDInfo?.ThreeDURL) {
+                      window.location.href = res.data.ThreeDInfo.ThreeDURL
+                      return
+                   }
+
+                   // 付款成功，顯示彈窗
+                  //  showSuccessAlert.value = true
                 } else {
-                   alert('付款失敗: ' + (res.Message || '未知錯誤'))
+                   console.error('Execute Payment API Error:', res)
+                   alert('付款失敗: ' + (res.data?.RtnMsg || res.Message || '未知錯誤'))
                 }
             } catch (apiError) {
                 console.error('Execute Payment API Error:', apiError)
@@ -353,6 +370,10 @@ const handleApprovePayment = async () => {
     }
 }
 
+const handleAlertConfirm = () => {
+  showSuccessAlert.value = false
+  router.push('/balance')
+}
 </script>
 
 <style lang="scss" scoped>
@@ -634,7 +655,9 @@ const handleApprovePayment = async () => {
   font-size: 12px !important;
   margin-top: 4px !important;
 }
-
+:deep(#ECPayPayment .ecpay-pay-check .ecpay-checkbox.eck-2), :deep(#ECPayPayment .ecpay-pay-check .epc-txt) {
+  display: none !important; 
+}
 /* 按鈕樣式 (已設定，微調 margin) */
 /* 按鈕樣式 (已設定，微調 margin) */
 :deep(#ECPayPayment .btn-block), 

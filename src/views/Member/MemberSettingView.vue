@@ -157,9 +157,7 @@ const loadMemberProfile = async () => {
     if (res && res.user_profile) {
       const userProfile = res.user_profile
       
-      // API 目前回傳結構無 name，若需編輯姓名可能需要 API 支援或從其他地方獲取
-      // 這裡暫時保持空字串或預設值
-      formData.name = '' 
+      formData.name = userProfile.name || '' 
       formData.phone = userProfile.phone || ''
       formData.email = userProfile.email || ''
       formData.homeNumber = userProfile.household_number || ''

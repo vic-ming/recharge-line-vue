@@ -27,9 +27,15 @@ onMounted(async () => {
 
       // 2. 檢查是否登入
       if (!liff.isLoggedIn()) {
-         // 未登入，執行登入並中止流程
-         liff.login()
-         return 
+          // 只在 LINE App 內強制登入
+          if (liff.isInClient()) {
+             // 未登入，執行登入並中止流程
+             liff.login()
+             return 
+          } else {
+             console.log('Not in LINE Client, skipping forced login')
+             // Do not return, let it proceed to use mock/fallback logic in later steps
+          }
       }
       
       // 3. 確保取得到 UID

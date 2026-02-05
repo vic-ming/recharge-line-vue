@@ -77,10 +77,8 @@ const fetchMemberProfile = async () => {
     // 檢查 API 回傳結構
     if (res && res.user_profile) {
         const userProfile = res.user_profile
-        // API 目前沒有回傳 name 欄位，先使用預設值或從其他地方獲取（如果有的話）
-        // 暫時顯示 phone 作為名稱，或待 API 補充
         info.value = {
-            name: '--', 
+            name: userProfile.name || '--', 
             phone: userProfile.phone || '--',
             mail: userProfile.email || '--',
             home: userProfile.household_number || '--',

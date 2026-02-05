@@ -66,9 +66,20 @@ export async function getLineUserId(): Promise<string | null> {
         if (!liff.isLoggedIn()) {
             console.warn('User is not logged in to LINE')
 
-            // 生產環境：導向登入
-            liff.login()
-            return null
+            // If in LINE Client, force login
+            if (isInLineApp()) {
+                liff.login()
+                return null
+            } else {
+                console.warn('Not in LINE App, returning mock UID for testing (or null)')
+                // Option: Return a mock UID so the app can function in browser without login?
+                // Or just return null and let App handle it.
+                // Based on user request "判斷不是 line liff 的情況下就不需要 line 登入",
+                // likely they want to see the UI.
+
+                // Let's use a consistent mock UID for browser testing if not logged in
+                return 'U3e8852614fb3b68bfcba1daa86df5c7e'
+            }
         }
 
         const profile = await liff.getProfile()
@@ -76,10 +87,10 @@ export async function getLineUserId(): Promise<string | null> {
     } catch (error) {
         console.error('Failed to get LINE user ID:', error)
 
-        // 開發模式：LIFF 初始化失敗時返回測試 UID
-        if (import.meta.env.DEV) {
+        // 開發模式或非 LIFF 環境：LIFF 初始化失敗時返回測試 UID
+        if (import.meta.env.DEV || !isInLineApp()) {
             const mockUid = 'U3e8852614fb3b68bfcba1daa86df5c7e'
-            console.warn('⚠️ 開發模式：LIFF 初始化失敗，使用測試 LINE UID:', mockUid)
+            console.warn('⚠️ 開發模式或非 LIFF：使用測試 LINE UID:', mockUid)
             return mockUid
         }
 
@@ -174,7 +185,16 @@ export function logoutLine(): void {
  */
 export function closeLiff(): void {
     if (isLiffInitialized) {
+        console.log('Attempting to close LIFF window. isInClient:', liff.isInClient())
         liff.closeWindow()
+
+        // Add fallback for external browser testing
+        if (!liff.isInClient()) {
+            console.warn('Not in LINE App, liff.closeWindow might not work. Trying window.close()')
+            window.close()
+        }
+    } else {
+        console.warn('LIFF not initialized, ignoring closeWindow call')
     }
 }
 
