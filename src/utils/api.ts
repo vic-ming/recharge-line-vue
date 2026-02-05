@@ -115,6 +115,10 @@ export async function apiRequest<T = any>(
         return data
     } catch (error) {
         console.error('API Request Failed:', error)
+        // 增強錯誤訊息，包含 URL 以便除錯
+        if (error instanceof Error) {
+            error.message = `Request failed to ${url}: ${error.message}`
+        }
         throw error
     }
 }
