@@ -115,7 +115,7 @@ const formatDate = (date: Date): string => {
   const yyyy = date.getFullYear()
   const mm = String(date.getMonth() + 1).padStart(2, '0')
   const dd = String(date.getDate()).padStart(2, '0')
-  return `${yyyy}/${mm}/${dd}`
+  return `${yyyy}-${mm}-${dd}`
 }
 
 const selectedParking = ref('')
@@ -189,7 +189,10 @@ const loadData = async () => {
 
     // 2. 根據目前條件搜尋紀錄
     if (selectedParking.value && startDate.value && endDate.value) {
-      const recordsRes = await getChargingRecords(startDate.value, endDate.value)
+      // API 需要 YYYY/MM/DD 格式
+      const apiStartDate = startDate.value.replace(/-/g, '/')
+      const apiEndDate = endDate.value.replace(/-/g, '/')
+      const recordsRes = await getChargingRecords(apiStartDate, apiEndDate)
       
       if (recordsRes && recordsRes.data && Array.isArray(recordsRes.data)) {
         // 找到目前選定車位的資料

@@ -87,6 +87,7 @@ export interface CreatePaymentTokenRequest {
     invoice_carrier_num?: string
     invoice_buyer_name?: string
     invoice_tax_id?: string
+    choose_payment_list: number | null
 }
 
 /** 建立支付 Token 回應 */

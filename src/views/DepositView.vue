@@ -233,91 +233,89 @@ const handleDeposit = async () => {
 
   isLoading.value = true
   try {
-    if (selectedPayment.value === 'card') {
-      const lineUid = await getLineUserId()
-      if (!lineUid) {
-        alert('無法取得 LINE UID')
-        return
-      }
+    const lineUid = await getLineUserId()
+    if (!lineUid) {
+      alert('無法取得 LINE UID')
+      return
+    }
 
-      // 1. 取得會員資料 (為了拿手機號碼)
-      let memberProfile: any
-      try {
-        memberProfile = await getMemberProfile() as any
-      } catch (e) {
-         alert('取得會員資料失敗: ' + (e instanceof Error ? e.message : e))
-         throw e
-      }
-      
-      const phone = memberProfile?.user_profile?.phone
-      const email = memberProfile?.user_profile?.email
-      
-      if (!phone) {
-        alert('無法取得會員電話號碼')
-        return
-      }
-
-      // 2. 建立支付 Token
-      let tokenRes
-      try {
-        tokenRes = await createPaymentToken({
-            total_amount: selectedAmount.value!,
-            member_id: lineUid,
-            phone: phone,
-            email: email,
-            invoice_carrier_type: selectedInvoiceType.value!, 
-            invoice_carrier_num: selectedInvoiceType.value === 2 ? formData.mobileCarrier : '',
-            invoice_buyer_name: selectedInvoiceType.value === 3 ? formData.companyName : '',
-            invoice_tax_id: selectedInvoiceType.value === 3 ? formData.taxId : '',
-        })
-      } catch (e) {
-        alert('建立支付 Token 失敗: ' + (e instanceof Error ? e.message : e))
+    // 1. 取得會員資料 (為了拿手機號碼)
+    let memberProfile: any
+    try {
+      memberProfile = await getMemberProfile() as any
+    } catch (e) {
+        alert('取得會員資料失敗: ' + (e instanceof Error ? e.message : e))
         throw e
-      }
+    }
+    
+    const phone = memberProfile?.user_profile?.phone
+    const email = memberProfile?.user_profile?.email
+    
+    if (!phone) {
+      alert('無法取得會員電話號碼')
+      return
+    }
 
-      if (!tokenRes?.data?.token) {
-        alert('建立支付訂單失敗')
-        return
-      }
+    // 2. 建立支付 Token
+    let tokenRes
+    try {
+      tokenRes = await createPaymentToken({
+          total_amount: selectedAmount.value!,
+          member_id: lineUid,
+          phone: phone,
+          email: email,
+          invoice_carrier_type: selectedInvoiceType.value!, 
+          invoice_carrier_num: selectedInvoiceType.value === 2 ? formData.mobileCarrier : '',
+          invoice_buyer_name: selectedInvoiceType.value === 3 ? formData.companyName : '',
+          invoice_tax_id: selectedInvoiceType.value === 3 ? formData.taxId : '',
+          choose_payment_list: selectedPayment.value === 'card' ? null : 7,
+      })
+    } catch (e) {
+      alert('建立支付 Token 失敗: ' + (e instanceof Error ? e.message : e))
+      throw e
+    }
 
-      // 3. 載入並呼叫 SDK
-      await loadECPaySDK('stage') // 預設使用 stage，實際專案可依環境變數調整
-      
-      
-      if (window.ECPay) {
-        // 1. 初始化 ECPay SDK
-        // 第一個參數: 'STAGE' | 'PROD' (ServerType)
-        // 第二個參數: 1 (isLoading, 1=顯示預設 loading, 0=不顯示)
+    if (!tokenRes?.data?.token) {
+      alert('建立支付訂單失敗')
+      return
+    }
+
+    // 3. 載入並呼叫 SDK
+    await loadECPaySDK('stage') // 預設使用 stage，實際專案可依環境變數調整
+    
+    
+    if (window.ECPay) {
+      // 1. 初始化 ECPay SDK
+      // 第一個參數: 'STAGE' | 'PROD' (ServerType)
+      // 第二個參數: 1 (isLoading, 1=顯示預設 loading, 0=不顯示)
+      // 第三個參數: callback (錯誤處理)
+      window.ECPay.initialize('STAGE', 1, (errMsg) => {
+        if (errMsg) {
+          alert('ECPay 初始化失敗: ' + errMsg)
+          return
+        }
+        
+        // 2. 建立支付
+        // 第一個參數: token
+        // 第二個參數: 語言 'zh-TW' | 'en-US'
         // 第三個參數: callback (錯誤處理)
-        window.ECPay.initialize('STAGE', 1, (errMsg) => {
-          if (errMsg) {
-            alert('ECPay 初始化失敗: ' + errMsg)
-            return
-          }
-          
-          // 2. 建立支付
-          // 第一個參數: token
-          // 第二個參數: 語言 'zh-TW' | 'en-US'
-          // 第三個參數: callback (錯誤處理)
-          try {
-            window.ECPay!.createPayment(tokenRes.data.token, 'zh-TW', (errMsg) => {
-              if (errMsg) {
-                console.error('ECPay CreatePayment Error:', errMsg)
-                alert('建立支付畫面失敗: ' + errMsg)
-              } else {
+        try {
+          window.ECPay!.createPayment(tokenRes.data.token, 'zh-TW', (errMsg) => {
+            if (errMsg) {
+              console.error('ECPay CreatePayment Error:', errMsg)
+              alert('建立支付畫面失敗: ' + errMsg)
+            } else {
+              if (selectedPayment.value === 'card') {
                 isECPayReady.value = true
               }
-            })
-          } catch (e) {
-             console.error('ECPay CreatePayment Exception:', e)
-          }
-        })
-      } else {
-        alert('支付 SDK 載入失敗')
-      }
-    } else if (selectedPayment.value === 'apple') {
-      // Apple Pay 暫時導向原路徑或處理
-      //  router.push('/pay-way')
+            }
+          })
+        } catch (e) {
+            console.error('ECPay CreatePayment Exception:', e)
+        }
+      })
+    } else {
+      alert('支付 SDK 載入失敗')
     }
   } catch (error) {
     console.error('Deposit failed:', error)
