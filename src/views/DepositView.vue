@@ -93,6 +93,7 @@
           </div>
 
           <div 
+            v-if="supportsApplePay"
             class="payment-card"
             :class="{ active: selectedPayment === 'apple' }"
             @click="selectedPayment = 'apple'"
@@ -139,7 +140,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import MainLayout from '@/components/MainLayout.vue'
 import CustomSelect from '@/components/CustomSelect.vue'
@@ -151,6 +152,11 @@ import { getLineUserId } from '@/utils/liff'
 const router = useRouter()
 const isECPayReady = ref(false)
 const showSuccessAlert = ref(false)
+const supportsApplePay = ref(false)
+
+onMounted(() => {
+  supportsApplePay.value = !!(window as any).ApplePaySession?.canMakePayments()
+})
 
 const amountPresets = [1000, 2000, 3000, 5000, 7000, 10000]
 const selectedAmount = ref<number | null>(null)
