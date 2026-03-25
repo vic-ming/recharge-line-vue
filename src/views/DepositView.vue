@@ -140,7 +140,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import MainLayout from '@/components/MainLayout.vue'
 import CustomSelect from '@/components/CustomSelect.vue'
