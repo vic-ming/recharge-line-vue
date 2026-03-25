@@ -105,13 +105,20 @@ export async function apiRequest<T = any>(
         }
 
         // 檢查是否為 204 No Content，或者 body 為空
-        let data: ApiResponse<T> = {}
+        let data: any = {}
         const contentType = response.headers.get('content-type')
         if (response.status !== 204 && contentType && contentType.includes('application/json')) {
             data = await response.json()
+        } else {
+            // 如果沒內容，至少回傳 HTTP 狀態，方便前端判斷
+            data = {
+                success: response.ok,
+                status: response.status,
+                Message: response.statusText
+            }
         }
 
-        // 檢查 API 回應的 Code
+        // 檢查 API 回應的 Code (相容舊格式)
         if (data && data.Code !== undefined && data.Code !== 0 && data.Code !== 1) {
             console.error('API Error:', data.Message)
             // 可以在這裡加入全域錯誤處理
