@@ -156,44 +156,6 @@ const supportsApplePay = ref(false)
 
 onMounted(() => {
   supportsApplePay.value = !!(window as any).ApplePaySession?.canMakePayments()
-
-  // 註冊綠界 Apple Pay 取號後的回呼函式
-  ;(window as any).getApplePayResultData = async (paymentInfo: any, errMsg: string) => {
-    if (errMsg) {
-      console.error('Apple Pay Error:', errMsg)
-      alert('Apple Pay 取號失敗: ' + errMsg)
-      return
-    }
-    
-    isLoading.value = true
-    try {
-      const memberProfile = await getMemberProfile() as any
-      const phone = memberProfile?.user_profile?.phone || ''
-
-      const res = await executePayment({
-        pay_token: paymentInfo.PayToken,
-        merchant_trade_no: paymentInfo.MerchantTradeNo,
-        phone: phone
-      })
-
-      if (res.success) {
-        // 付款成功跳轉提示
-        showSuccessAlert.value = true
-      } else {
-        console.error('Apple Pay API Error:', res)
-        alert('Apple Pay 付款失敗: ' + (res.data?.RtnMsg || res.Message || '未知錯誤'))
-      }
-    } catch (apiError) {
-      console.error('Apple Pay API Error:', apiError)
-      alert('Apple Pay 呼叫失敗')
-    } finally {
-      isLoading.value = false
-    }
-  }
-})
-
-onUnmounted(() => {
-  delete (window as any).getApplePayResultData
 })
 
 const amountPresets = [1000, 2000, 3000, 5000, 7000, 10000]
@@ -401,6 +363,7 @@ const handleApprovePayment = async () => {
                 })
 
                 if (res.success) { // 假設 Code 1 為成功
+                  console.log('Execute Payment API Success:', res)
                    // check 3D verification
                    if (res.data?.ThreeDInfo?.ThreeDURL) {
                       window.location.href = res.data.ThreeDInfo.ThreeDURL
