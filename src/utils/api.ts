@@ -104,10 +104,15 @@ export async function apiRequest<T = any>(
             throw new Error(`HTTP Error: ${response.status} ${response.statusText}`)
         }
 
-        const data: ApiResponse<T> = await response.json()
+        // 檢查是否為 204 No Content，或者 body 為空
+        let data: ApiResponse<T> = {}
+        const contentType = response.headers.get('content-type')
+        if (response.status !== 204 && contentType && contentType.includes('application/json')) {
+            data = await response.json()
+        }
 
         // 檢查 API 回應的 Code
-        if (data.Code !== 0 && data.Code !== 1) {
+        if (data && data.Code !== undefined && data.Code !== 0 && data.Code !== 1) {
             console.error('API Error:', data.Message)
             // 可以在這裡加入全域錯誤處理
         }
@@ -115,11 +120,16 @@ export async function apiRequest<T = any>(
         return data
     } catch (error) {
         console.error('API Request Failed:', error)
-        // 增強錯誤訊息，包含 URL 以便除錯
-        if (error instanceof Error) {
-            error.message = `Request failed to ${url}: ${error.message}`
+        // 增強錯誤訊息，不直接修改 error.message 以免它是 readonly 的
+        const message = error instanceof Error ? error.message : String(error)
+        const enhancedError = new Error(`Request failed to ${url}: ${message}`)
+
+        // 保留原始錯誤的 stack
+        if (error instanceof Error && error.stack) {
+            enhancedError.stack = error.stack
         }
-        throw error
+
+        throw enhancedError
     }
 }
 
