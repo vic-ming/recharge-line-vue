@@ -157,6 +157,7 @@ const supportsApplePay = ref(false)
 onMounted(() => {
   supportsApplePay.value = !!(window as any).ApplePaySession?.canMakePayments()
   ;(window as any).getApplePayResultData = async (paymentInfo: any, errMsg: string) => {
+    if (selectedPayment.value !== 'apple') return  // 防止非 Apple Pay 流程誤觸
     if (errMsg) {
       console.error('Apple Pay Error:', errMsg)
       alert('Apple Pay 取號失敗: ' + errMsg)
